@@ -5,17 +5,24 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Software Architecture - ITA Fall 2026</title>
     <style>
+        /* GitBook-inspired color palette */
         :root {
-            --primary-color: #2c3e50;
-            --secondary-color: #3498db;
-            --accent-color: #e74c3c;
-            --background-color: #f8f9fa;
-            --text-color: #2c3e50;
-            --light-text: #7f8c8d;
-            --white: #ffffff;
-            --card-bg: #ffffff;
-            --shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            --border-radius: 8px;
+            --gitbook-primary: #2196F3;
+            --gitbook-primary-dark: #1976D2;
+            --gitbook-primary-light: #BBDEFB;
+            --gitbook-text: #333333;
+            --gitbook-text-secondary: #666666;
+            --gitbook-text-light: #999999;
+            --gitbook-background: #ffffff;
+            --gitbook-sidebar-bg: #f8f9fa;
+            --gitbook-border: #e0e0e0;
+            --gitbook-code-bg: #f5f5f5;
+            --gitbook-success: #4CAF50;
+            --gitbook-warning: #FF9800;
+            --gitbook-danger: #F44336;
+            
+            --sidebar-width: 280px;
+            --header-height: 60px;
         }
 
         * {
@@ -26,295 +33,544 @@
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background-color: var(--background-color);
-            color: var(--text-color);
-            line-height: 1.6;
+            background-color: var(--gitbook-background);
+            color: var(--gitbook-text);
+            line-height: 1.7;
+            font-size: 15px;
         }
 
-        .container {
+        /* Header - GitBook style */
+        .gitbook-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: var(--header-height);
+            background: var(--gitbook-background);
+            border-bottom: 1px solid var(--gitbook-border);
+            display: flex;
+            align-items: center;
+            padding: 0 24px;
+            z-index: 1000;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        .header-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
             max-width: 1400px;
             margin: 0 auto;
-            padding: 0 20px;
+            width: 100%;
         }
 
-        /* Header */
-        header {
-            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
-            color: var(--white);
-            padding: 30px 0;
-            box-shadow: var(--shadow);
-            position: sticky;
-            top: 0;
-            z-index: 1000;
-        }
-
-        header .container {
+        .logo-section {
             display: flex;
-            justify-content: space-between;
             align-items: center;
-            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .logo-icon {
+            width: 32px;
+            height: 32px;
+            background: var(--gitbook-primary);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 18px;
+        }
+
+        .logo-text h1 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--gitbook-text);
+            margin: 0;
+        }
+
+        .logo-text p {
+            font-size: 0.8rem;
+            color: var(--gitbook-text-secondary);
+            margin: 2px 0 0 0;
+        }
+
+        .header-nav {
+            display: flex;
+            align-items: center;
             gap: 20px;
         }
 
-        .logo h1 {
-            font-size: 1.5rem;
-            font-weight: 600;
-        }
-
-        .logo p {
-            font-size: 0.9rem;
-            opacity: 0.9;
-        }
-
-        nav ul {
-            display: flex;
-            list-style: none;
-            gap: 25px;
-        }
-
-        nav a {
-            color: var(--white);
+        .header-nav a {
+            color: var(--gitbook-text-secondary);
             text-decoration: none;
-            font-weight: 500;
+            font-size: 0.9rem;
             padding: 8px 12px;
-            border-radius: var(--border-radius);
-            transition: background-color 0.3s ease;
+            border-radius: 4px;
+            transition: all 0.2s ease;
         }
 
-        nav a:hover, nav a.active {
-            background-color: rgba(255, 255, 255, 0.2);
+        .header-nav a:hover {
+            background: var(--gitbook-primary-light);
+            color: var(--gitbook-primary);
+        }
+
+        .header-nav a.active {
+            background: var(--gitbook-primary);
+            color: white;
         }
 
         /* Main Layout */
-        .main-content {
-            padding: 40px 0;
+        .gitbook-container {
+            display: flex;
+            min-height: 100vh;
+            padding-top: var(--header-height);
         }
 
-        .grid-2col {
-            display: grid;
-            grid-template-columns: 300px 1fr;
-            gap: 30px;
+        /* Sidebar */
+        .gitbook-sidebar {
+            width: var(--sidebar-width);
+            position: fixed;
+            top: var(--header-height);
+            left: 0;
+            bottom: 0;
+            background: var(--gitbook-sidebar-bg);
+            border-right: 1px solid var(--gitbook-border);
+            padding: 24px 0;
+            overflow-y: auto;
+            z-index: 900;
         }
 
-        /* Sidebar Navigation */
-        .sidebar {
-            background: var(--card-bg);
-            border-radius: var(--border-radius);
-            padding: 25px;
-            box-shadow: var(--shadow);
-            height: fit-content;
+        .sidebar-content {
+            padding: 0 16px;
         }
 
-        .sidebar h2 {
-            font-size: 1.1rem;
-            color: var(--primary-color);
+        .sidebar-search {
             margin-bottom: 20px;
-            padding-bottom: 10px;
-            border-bottom: 2px solid var(--secondary-color);
+            padding: 0 8px;
         }
 
-        .session-list {
+        .sidebar-search input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid var(--gitbook-border);
+            border-radius: 4px;
+            font-size: 0.9rem;
+            background: white;
+            color: var(--gitbook-text);
+        }
+
+        .sidebar-search input:focus {
+            outline: none;
+            border-color: var(--gitbook-primary);
+            box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.1);
+        }
+
+        .sidebar-nav {
             list-style: none;
         }
 
-        .session-list li {
-            margin-bottom: 10px;
+        .nav-section {
+            margin-bottom: 24px;
         }
 
-        .session-link {
-            display: block;
-            padding: 12px 15px;
-            color: var(--text-color);
+        .nav-section-title {
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--gitbook-text-light);
+            margin-bottom: 12px;
+            padding: 0 8px;
+        }
+
+        .nav-item {
+            margin-bottom: 4px;
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            padding: 10px 12px;
+            color: var(--gitbook-text);
             text-decoration: none;
-            border-radius: var(--border-radius);
-            transition: all 0.3s ease;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+            font-size: 0.9rem;
+            gap: 12px;
+        }
+
+        .nav-link:hover {
+            background: rgba(33, 150, 243, 0.05);
+            color: var(--gitbook-primary);
+        }
+
+        .nav-link.active {
+            background: var(--gitbook-primary);
+            color: white;
             font-weight: 500;
         }
 
-        .session-link:hover {
-            background-color: var(--secondary-color);
-            color: var(--white);
-        }
-
-        .session-link.active {
-            background-color: var(--secondary-color);
-            color: var(--white);
-        }
-
-        .session-number {
-            display: inline-block;
-            width: 28px;
-            height: 28px;
-            background-color: var(--secondary-color);
-            color: var(--white);
-            border-radius: 50%;
-            text-align: center;
-            line-height: 28px;
-            font-size: 0.85rem;
+        .nav-icon {
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--gitbook-primary-light);
+            color: var(--gitbook-primary);
+            border-radius: 4px;
+            font-size: 11px;
             font-weight: bold;
-            margin-right: 10px;
+            flex-shrink: 0;
         }
 
-        .session-link.active .session-number {
-            background-color: var(--white);
-            color: var(--secondary-color);
+        .nav-link.active .nav-icon {
+            background: rgba(255,255,255,0.2);
+            color: white;
         }
 
-        .session-title {
-            display: inline;
-        }
-
-        .session-group {
-            margin-top: 20px;
-        }
-
-        .session-group h3 {
-            font-size: 0.9rem;
-            color: var(--light-text);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 10px;
+        .nav-title {
+            flex: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         /* Content Area */
-        .content-area {
-            background: var(--card-bg);
-            border-radius: var(--border-radius);
-            padding: 30px;
-            box-shadow: var(--shadow);
-            min-height: 600px;
+        .gitbook-main {
+            flex: 1;
+            margin-left: var(--sidebar-width);
+            padding: 32px 48px;
+            max-width: 900px;
         }
 
-        .content-area h1 {
-            color: var(--primary-color);
-            margin-bottom: 20px;
+        .content-header {
+            margin-bottom: 32px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--gitbook-border);
+        }
+
+        .content-header h1 {
             font-size: 2rem;
+            font-weight: 600;
+            color: var(--gitbook-text);
+            margin: 0 0 8px 0;
         }
 
-        .content-area h2 {
-            color: var(--primary-color);
-            margin-top: 30px;
-            margin-bottom: 15px;
+        .content-header .subtitle {
+            color: var(--gitbook-text-secondary);
+            font-size: 0.95rem;
+            margin: 0;
+        }
+
+        .content-body {
+            line-height: 1.8;
+        }
+
+        .content-body h1 {
+            font-size: 1.8rem;
+            font-weight: 600;
+            color: var(--gitbook-text);
+            margin: 2rem 0 1rem 0;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--gitbook-border);
+        }
+
+        .content-body h2 {
             font-size: 1.4rem;
-            padding-bottom: 8px;
-            border-bottom: 1px solid #eee;
+            font-weight: 600;
+            color: var(--gitbook-text);
+            margin: 1.8rem 0 0.8rem 0;
         }
 
-        .content-area h3 {
-            color: var(--primary-color);
-            margin-top: 25px;
-            margin-bottom: 12px;
+        .content-body h3 {
             font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--gitbook-text);
+            margin: 1.5rem 0 0.6rem 0;
         }
 
-        .content-area h4 {
-            color: var(--primary-color);
-            margin-top: 20px;
-            margin-bottom: 10px;
+        .content-body h4 {
             font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--gitbook-text);
+            margin: 1.3rem 0 0.5rem 0;
         }
 
-        .content-area p {
-            margin-bottom: 15px;
+        .content-body h5 {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--gitbook-text);
+            margin: 1.2rem 0 0.5rem 0;
         }
 
-        .content-area ul, .content-area ol {
-            margin-bottom: 20px;
-            padding-left: 20px;
+        .content-body h6 {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--gitbook-text-secondary);
+            margin: 1.1rem 0 0.5rem 0;
         }
 
-        .content-area li {
-            margin-bottom: 8px;
+        .content-body p {
+            margin: 0 0 1.2rem 0;
+            color: var(--gitbook-text);
         }
 
-        .content-area blockquote {
-            border-left: 4px solid var(--secondary-color);
-            padding-left: 15px;
-            margin-left: 0;
-            color: var(--light-text);
+        .content-body ul,
+        .content-body ol {
+            margin: 0 0 1.2rem 0;
+            padding-left: 2em;
+        }
+
+        .content-body li {
+            margin: 0.3rem 0;
+        }
+
+        .content-body ul ul,
+        .content-body ol ol,
+        .content-body ul ol,
+        .content-body ol ul {
+            margin: 0.3rem 0 0.5rem 0;
+        }
+
+        .content-body blockquote {
+            border-left: 4px solid var(--gitbook-primary);
+            padding-left: 16px;
+            margin: 1.2rem 0;
+            color: var(--gitbook-text-secondary);
             font-style: italic;
-            padding-top: 10px;
-            padding-bottom: 10px;
         }
 
-        .content-area code {
-            background-color: #f0f0f0;
+        .content-body code {
+            background-color: var(--gitbook-code-bg);
             padding: 2px 6px;
-            border-radius: 4px;
+            border-radius: 3px;
             font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
-            font-size: 0.9rem;
+            font-size: 0.88rem;
+            color: var(--gitbook-text);
         }
 
-        .content-area pre {
-            background-color: #f0f0f0;
-            padding: 15px;
-            border-radius: 4px;
+        .content-body pre {
+            background-color: var(--gitbook-code-bg);
+            padding: 16px;
+            border-radius: 6px;
             overflow-x: auto;
-            margin-bottom: 20px;
+            margin: 1.2rem 0;
+            border: 1px solid var(--gitbook-border);
         }
 
-        .content-area pre code {
+        .content-body pre code {
             background-color: transparent;
             padding: 0;
             font-size: 0.85rem;
+            color: var(--gitbook-text);
         }
 
-        .content-area table {
+        .content-body table {
             width: 100%;
             border-collapse: collapse;
-            margin: 20px 0;
+            margin: 1.2rem 0;
         }
 
-        .content-area th,
-        .content-area td {
-            padding: 12px;
+        .content-body th,
+        .content-body td {
+            padding: 12px 16px;
             text-align: left;
-            border-bottom: 1px solid #ddd;
+            border-bottom: 1px solid var(--gitbook-border);
         }
 
-        .content-area th {
-            background-color: var(--primary-color);
-            color: var(--white);
+        .content-body th {
+            background-color: var(--gitbook-code-bg);
+            font-weight: 600;
+            color: var(--gitbook-text);
         }
 
-        .content-area a {
-            color: var(--secondary-color);
+        .content-body tr:hover {
+            background-color: var(--gitbook-code-bg);
+        }
+
+        .content-body a {
+            color: var(--gitbook-primary);
             text-decoration: none;
         }
 
-        .content-area a:hover {
+        .content-body a:hover {
             text-decoration: underline;
+            color: var(--gitbook-primary-dark);
         }
 
-        .content-area img {
+        .content-body img {
             max-width: 100%;
             height: auto;
             border-radius: 4px;
-            margin: 20px 0;
+            margin: 1.2rem 0;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
 
-        .content-area hr {
+        .content-body hr {
             border: none;
             height: 1px;
-            background-color: #ddd;
-            margin: 30px 0;
+            background-color: var(--gitbook-border);
+            margin: 2rem 0;
         }
 
-        /* Loading State */
+        /* Info boxes */
+        .alert {
+            padding: 16px;
+            border-radius: 6px;
+            margin: 1.2rem 0;
+            border-left: 4px solid;
+        }
+
+        .alert-note {
+            background: #E3F2FD;
+            border-color: var(--gitbook-primary);
+            color: #0D47A1;
+        }
+
+        .alert-tip {
+            background: #E8F5E9;
+            border-color: var(--gitbook-success);
+            color: #1B5E20;
+        }
+
+        .alert-warning {
+            background: #FFF3E0;
+            border-color: var(--gitbook-warning);
+            color: #E65100;
+        }
+
+        .alert-important {
+            background: #FFEBEE;
+            border-color: var(--gitbook-danger);
+            color: #C62828;
+        }
+
+        .alert p:first-child {
+            margin-top: 0;
+        }
+
+        .alert p:last-child {
+            margin-bottom: 0;
+        }
+
+        /* Home page specific styles */
+        .hero {
+            background: linear-gradient(135deg, var(--gitbook-primary) 0%, var(--gitbook-primary-dark) 100%);
+            color: white;
+            padding: 48px 32px;
+            border-radius: 8px;
+            margin-bottom: 2rem;
+        }
+
+        .hero h1 {
+            font-size: 2.2rem;
+            font-weight: 600;
+            margin: 0 0 1rem 0;
+            color: white;
+        }
+
+        .hero p {
+            font-size: 1.1rem;
+            line-height: 1.7;
+            margin: 0 0 1.5rem 0;
+            opacity: 0.95;
+            color: white;
+        }
+
+        .hero .cta-button {
+            display: inline-block;
+            background: white;
+            color: var(--gitbook-primary);
+            padding: 12px 24px;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .hero .cta-button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .course-overview {
+            background: var(--gitbook-sidebar-bg);
+            border: 1px solid var(--gitbook-border);
+            border-radius: 8px;
+            padding: 24px;
+            margin-bottom: 1.5rem;
+        }
+
+        .course-overview h2 {
+            font-size: 1.3rem;
+            margin: 0 0 1.2rem 0;
+            color: var(--gitbook-text);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 16px;
+            margin: 1.2rem 0;
+        }
+
+        .stat-card {
+            background: white;
+            border: 1px solid var(--gitbook-border);
+            border-radius: 6px;
+            padding: 16px;
+            text-align: center;
+        }
+
+        .stat-number {
+            display: block;
+            font-size: 2rem;
+            font-weight: 600;
+            color: var(--gitbook-primary);
+        }
+
+        .stat-label {
+            font-size: 0.85rem;
+            color: var(--gitbook-text-secondary);
+        }
+
+        /* Breadcrumb */
+        .breadcrumb {
+            padding: 8px 16px;
+            background: var(--gitbook-code-bg);
+            border-radius: 4px;
+            margin-bottom: 1.5rem;
+            font-size: 0.88rem;
+        }
+
+        .breadcrumb a {
+            color: var(--gitbook-primary);
+            text-decoration: none;
+        }
+
+        .breadcrumb span {
+            color: var(--gitbook-text-secondary);
+            margin: 0 8px;
+        }
+
+        /* Loading state */
         .loading {
             text-align: center;
-            padding: 40px;
-            color: var(--light-text);
+            padding: 60px 20px;
+            color: var(--gitbook-text-secondary);
         }
 
         .spinner {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid var(--secondary-color);
+            border: 3px solid var(--gitbook-border);
+            border-top: 3px solid var(--gitbook-primary);
             border-radius: 50%;
             width: 40px;
             height: 40px;
             animation: spin 1s linear infinite;
-            margin: 0 auto 20px;
+            margin: 0 auto 16px;
         }
 
         @keyframes spin {
@@ -322,694 +578,497 @@
             100% { transform: rotate(360deg); }
         }
 
-        /* Home Page */
-        .home-page {
-            text-align: center;
+        /* Session content styling */
+        .session-content {
+            animation: fadeIn 0.3s ease;
         }
 
-        .hero-section {
-            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
-            color: var(--white);
-            padding: 60px 30px;
-            border-radius: var(--border-radius);
-            margin-bottom: 30px;
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
-        .hero-section h1 {
-            font-size: 2.5rem;
-            margin-bottom: 20px;
-            color: var(--white);
-        }
-
-        .hero-section p {
-            font-size: 1.1rem;
-            max-width: 700px;
-            margin: 0 auto 30px;
-            line-height: 1.8;
-        }
-
-        .cta-button {
-            display: inline-block;
-            background-color: var(--white);
-            color: var(--primary-color);
-            padding: 15px 30px;
-            text-decoration: none;
-            border-radius: var(--border-radius);
-            font-weight: 600;
-            transition: all 0.3s ease;
-        }
-
-        .cta-button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-        }
-
-        .course-overview {
-            background: var(--card-bg);
-            border-radius: var(--border-radius);
-            padding: 30px;
-            box-shadow: var(--shadow);
-            margin-top: 30px;
-        }
-
-        .course-overview h2 {
-            margin-bottom: 20px;
-        }
-
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-
-        .stat-card {
-            background: linear-gradient(135deg, var(--secondary-color) 0%, var(--accent-color) 100%);
-            color: var(--white);
-            padding: 20px;
-            border-radius: var(--border-radius);
-            text-align: center;
-        }
-
-        .stat-number {
-            font-size: 2.5rem;
-            font-weight: bold;
-            display: block;
-        }
-
-        .stat-label {
-            font-size: 1rem;
-            opacity: 0.9;
-        }
-
-        /* Breadcrumb */
-        .breadcrumb {
-            background: var(--card-bg);
-            padding: 15px 30px;
-            border-radius: var(--border-radius);
-            margin-bottom: 20px;
-            box-shadow: var(--shadow);
-        }
-
-        .breadcrumb a {
-            color: var(--secondary-color);
-            text-decoration: none;
-        }
-
-        .breadcrumb span {
-            color: var(--light-text);
-            margin: 0 10px;
-        }
-
-        /* Footer */
-        footer {
-            background-color: var(--primary-color);
-            color: var(--white);
-            padding: 30px 0;
-            margin-top: 40px;
-            text-align: center;
-        }
-
-        footer p {
-            opacity: 0.8;
-        }
-
-        /* Responsive Design */
-        @media (max-width: 900px) {
-            .grid-2col {
-                grid-template-columns: 1fr;
-            }
-
-            .sidebar {
-                order: 2;
-            }
-
-            .content-area {
-                order: 1;
-            }
-
-            nav ul {
-                flex-wrap: wrap;
-                gap: 10px;
-            }
-
-            nav a {
-                font-size: 0.9rem;
-                padding: 6px 10px;
-            }
-        }
-
-        @media (max-width: 600px) {
-            header .container {
-                flex-direction: column;
-                text-align: center;
-            }
-
-            .hero-section h1 {
-                font-size: 1.8rem;
-            }
-
-            .hero-section p {
-                font-size: 1rem;
-            }
-
-            .stats-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-        }
-
-        /* Scroll to top button */
-        .scroll-to-top {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background-color: var(--secondary-color);
-            color: var(--white);
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            text-decoration: none;
-            opacity: 0;
-            transition: opacity 0.3s ease;
-            z-index: 1000;
-        }
-
-        .scroll-to-top.visible {
-            opacity: 1;
-        }
-
-        /* Markdown-specific styling */
+        /* Mermaid diagrams */
         .mermaid {
             text-align: center;
-            margin: 20px 0;
+            margin: 2rem 0;
+            background: var(--gitbook-code-bg);
+            padding: 16px;
+            border-radius: 6px;
+            border: 1px solid var(--gitbook-border);
         }
 
         .mermaid svg {
             max-width: 100%;
         }
 
+        /* Footer */
+        .gitbook-footer {
+            background: var(--gitbook-sidebar-bg);
+            border-top: 1px solid var(--gitbook-border);
+            padding: 24px 48px;
+            text-align: center;
+            color: var(--gitbook-text-secondary);
+            font-size: 0.88rem;
+            margin-left: var(--sidebar-width);
+        }
+
+        /* Scroll to top button */
+        .scroll-to-top {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: var(--gitbook-primary);
+            color: white;
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            opacity: 0;
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            z-index: 1000;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+
+        .scroll-to-top.visible {
+            opacity: 1;
+            transform: translateY(-4px);
+        }
+
+        .scroll-to-top:hover {
+            background: var(--gitbook-primary-dark);
+        }
+
+        /* Responsive design */
+        @media (max-width: 1024px) {
+            .gitbook-main {
+                padding: 24px 32px;
+            }
+            
+            .gitbook-footer {
+                padding: 20px 32px;
+            }
+        }
+
+        @media (max-width: 900px) {
+            .gitbook-container {
+                flex-direction: column;
+            }
+            
+            .gitbook-sidebar {
+                position: relative;
+                width: 100%;
+                top: 0;
+                border-right: none;
+                border-bottom: 1px solid var(--gitbook-border);
+                padding: 16px 0;
+            }
+            
+            .gitbook-main {
+                margin-left: 0;
+                max-width: 100%;
+            }
+            
+            .gitbook-footer {
+                margin-left: 0;
+            }
+            
+            .content-header h1 {
+                font-size: 1.6rem;
+            }
+            
+            .hero h1 {
+                font-size: 1.8rem;
+            }
+            
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 600px) {
+            .gitbook-header {
+                padding: 0 16px;
+            }
+            
+            .header-content {
+                flex-direction: column;
+                gap: 12px;
+            }
+            
+            .header-nav {
+                gap: 12px;
+            }
+            
+            .header-nav a {
+                padding: 6px 10px;
+                font-size: 0.85rem;
+            }
+            
+            .gitbook-main {
+                padding: 16px;
+            }
+            
+            .hero {
+                padding: 24px 16px;
+            }
+            
+            .hero h1 {
+                font-size: 1.5rem;
+            }
+            
+            .hero p {
+                font-size: 1rem;
+            }
+            
+            .content-body h1 {
+                font-size: 1.5rem;
+            }
+            
+            .content-body h2 {
+                font-size: 1.25rem;
+            }
+            
+            .content-body h3 {
+                font-size: 1.1rem;
+            }
+            
+            .course-overview {
+                padding: 16px;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
         /* Print styles */
         @media print {
-            header, footer, .sidebar, .scroll-to-top {
+            .gitbook-header,
+            .gitbook-sidebar,
+            .scroll-to-top,
+            .gitbook-footer {
                 display: none;
             }
-            .grid-2col {
+            
+            .gitbook-container {
                 display: block;
+            }
+            
+            .gitbook-main {
+                margin-left: 0;
+                padding: 0;
+                max-width: 100%;
+            }
+            
+            .content-body a::after {
+                content: attr(href);
+                font-size: 0.8rem;
+                color: #999;
+                margin-left: 4px;
             }
         }
     </style>
 </head>
 <body>
-    <header>
-        <div class="container">
-            <div class="logo">
-                <h1>Software Architecture</h1>
-                <p>ITA Fall 2026 | EK Business Academy</p>
+    <header class="gitbook-header">
+        <div class="header-content">
+            <div class="logo-section">
+                <div class="logo-icon">SA</div>
+                <div class="logo-text">
+                    <h1>Software Architecture</h1>
+                    <p>ITA Fall 2026</p>
+                </div>
             </div>
-            <nav>
-                <ul>
-                    <li><a href="#" class="nav-home active">Home</a></li>
-                    <li><a href="#curriculum" class="nav-curriculum">Curriculum</a></li>
-                </ul>
+            <nav class="header-nav">
+                <a href="#" class="nav-home active">Home</a>
+                <a href="#curriculum" class="nav-curriculum">Curriculum</a>
             </nav>
         </div>
     </header>
 
-    <main class="main-content">
-        <div class="container">
-            <div class="grid-2col">
-                <aside class="sidebar">
-                    <h2>Sessions</h2>
-                    <ul class="session-list">
-                        <!-- Sessions will be populated by JavaScript -->
-                    </ul>
-                </aside>
-
-                <section class="content-area" id="content">
-                    <!-- Content will be loaded here -->
-                    <div class="loading">
-                        <div class="spinner"></div>
-                        <p>Loading course content...</p>
-                    </div>
-                </section>
+    <div class="gitbook-container">
+        <aside class="gitbook-sidebar">
+            <div class="sidebar-content">
+                <div class="sidebar-search">
+                    <input type="text" placeholder="Search..." id="search-input">
+                </div>
+                <div class="sidebar-nav-container" id="sidebar-nav">
+                </div>
             </div>
-        </div>
-    </main>
+        </aside>
 
-    <footer>
-        <div class="container">
-            <p>Software Architecture Course - ITA Fall 2026 | EK Business Academy Copenhagen</p>
-        </div>
+        <main class="gitbook-main">
+            <div class="content-header" id="content-header">
+            </div>
+            <div class="content-body" id="content">
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>Loading course content...</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <footer class="gitbook-footer">
+        <p>Software Architecture Course - ITA Fall 2026 | EK Business Academy Copenhagen</p>
     </footer>
 
     <a href="#" class="scroll-to-top">&uarr;</a>
 
-    <!-- Marked.js for markdown parsing -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script>
-        // Session data - generated from the repo structure
         const sessions = [
-            { 
-                number: 1, 
-                title: "Introduction to 3rd semester", 
-                folder: "01._intro_3rd_semester",
-                group: "Introduction"
-            },
-            { 
-                number: 2, 
-                title: "Terminal, Linux & Git", 
-                folder: "02._terminal_linux_git",
-                group: "IT-Infrastructure Foundations"
-            },
-            { 
-                number: 3, 
-                title: "Bash, HTTP & M2M Security", 
-                folder: "03._bash_and_http",
-                group: "IT-Infrastructure Foundations"
-            },
-            { 
-                number: 4, 
-                title: "Networking", 
-                folder: "04._networking",
-                group: "IT-Infrastructure Foundations"
-            },
-            { 
-                number: 5, 
-                title: "Docker, Compose & Cloud", 
-                folder: "05._docker_compose",
-                group: "IT-Infrastructure Foundations"
-            },
-            { 
-                number: 6, 
-                title: "Intro to Software Architecture", 
-                folder: "06._intro_to_software_architecture",
-                group: "Architecture Teaching (Part 1)"
-            },
-            { 
-                number: 7, 
-                title: "Quality Attributes", 
-                folder: "07._quality_attributes",
-                group: "Architecture Teaching (Part 1)"
-            },
-            { 
-                number: 8, 
-                title: "Layered Architecture", 
-                folder: "08._layered_architecture",
-                group: "Architecture Teaching (Part 1)"
-            },
-            { 
-                number: 9, 
-                title: "Hexagonal Architecture", 
-                folder: "09._hexagonal_architecture",
-                group: "Architecture Teaching (Part 1)"
-            },
-            { 
-                number: 10, 
-                title: "REST API Architecture 1", 
-                folder: "10._rest_api_architecture_1",
-                group: "Architecture Teaching (Part 1)"
-            },
-            { 
-                number: 11, 
-                title: "REST API Architecture 2", 
-                folder: "11._rest_api_architecture_2",
-                group: "Architecture Teaching (Part 1)"
-            },
-            { 
-                number: 12, 
-                title: "Data Architecture", 
-                folder: "12._data_architecture",
-                group: "Architecture Teaching (Part 1)"
-            },
-            { 
-                number: 13, 
-                title: "Caching & Performance", 
-                folder: "13._caching_and_performance",
-                group: "Architecture Teaching (Part 1)"
-            },
-            { 
-                number: "14-17", 
-                title: "Project: Distributed System", 
-                folder: "14-17._project_distributed_system",
-                group: "Mid-Semester Project"
-            },
-            { 
-                number: 18, 
-                title: "Event-Driven Architecture", 
-                folder: "18._event_driven_architecture",
-                group: "Architecture Teaching (Part 2)"
-            },
-            { 
-                number: 19, 
-                title: "Microservices vs Monoliths", 
-                folder: "19._microservices_vs_monoliths",
-                group: "Architecture Teaching (Part 2)"
-            },
-            { 
-                number: 20, 
-                title: "Security Architecture", 
-                folder: "20._security_architecture",
-                group: "Architecture Teaching (Part 2)"
-            },
-            { 
-                number: 21, 
-                title: "Documentation, ADRs & C4 Model", 
-                folder: "21._documentation_adrs_and_c4",
-                group: "Architecture Teaching (Part 2)"
-            },
-            { 
-                number: "22-29", 
-                title: "Exam Project", 
-                folder: "22-29._exam_project",
-                group: "Exam Project"
-            }
+            { number: 1, title: "Introduction to 3rd semester", folder: "01._intro_3rd_semester", group: "Introduction" },
+            { number: 2, title: "Terminal, Linux & Git", folder: "02._terminal_linux_git", group: "IT-Infrastructure Foundations" },
+            { number: 3, title: "Bash, HTTP & M2M Security", folder: "03._bash_and_http", group: "IT-Infrastructure Foundations" },
+            { number: 4, title: "Networking", folder: "04._networking", group: "IT-Infrastructure Foundations" },
+            { number: 5, title: "Docker, Compose & Cloud", folder: "05._docker_compose", group: "IT-Infrastructure Foundations" },
+            { number: 6, title: "Intro to Software Architecture", folder: "06._intro_to_software_architecture", group: "Architecture Teaching (Part 1)" },
+            { number: 7, title: "Quality Attributes", folder: "07._quality_attributes", group: "Architecture Teaching (Part 1)" },
+            { number: 8, title: "Layered Architecture", folder: "08._layered_architecture", group: "Architecture Teaching (Part 1)" },
+            { number: 9, title: "Hexagonal Architecture", folder: "09._hexagonal_architecture", group: "Architecture Teaching (Part 1)" },
+            { number: 10, title: "REST API Architecture 1", folder: "10._rest_api_architecture_1", group: "Architecture Teaching (Part 1)" },
+            { number: 11, title: "REST API Architecture 2", folder: "11._rest_api_architecture_2", group: "Architecture Teaching (Part 1)" },
+            { number: 12, title: "Data Architecture", folder: "12._data_architecture", group: "Architecture Teaching (Part 1)" },
+            { number: 13, title: "Caching & Performance", folder: "13._caching_and_performance", group: "Architecture Teaching (Part 1)" },
+            { number: "14-17", title: "Project: Distributed System", folder: "14-17._project_distributed_system", group: "Mid-Semester Project" },
+            { number: 18, title: "Event-Driven Architecture", folder: "18._event_driven_architecture", group: "Architecture Teaching (Part 2)" },
+            { number: 19, title: "Microservices vs Monoliths", folder: "19._microservices_vs_monoliths", group: "Architecture Teaching (Part 2)" },
+            { number: 20, title: "Security Architecture", folder: "20._security_architecture", group: "Architecture Teaching (Part 2)" },
+            { number: 21, title: "Documentation, ADRs & C4 Model", folder: "21._documentation_adrs_and_c4", group: "Architecture Teaching (Part 2)" },
+            { number: "22-29", title: "Exam Project", folder: "22-29._exam_project", group: "Exam Project" }
         ];
 
         let currentPage = 'home';
         let currentSession = null;
 
-        // Initialize the app
         function init() {
             renderSidebar();
             loadPage('home');
             setupNavigation();
             setupScrollToTop();
+            setupSearch();
             renderMermaidDiagrams();
         }
 
-        // Render the sidebar with session links
         function renderSidebar() {
-            const sidebar = document.querySelector('.session-list');
+            const sidebarNav = document.getElementById('sidebar-nav');
             let html = '';
             let currentGroup = '';
 
-            sessions.forEach((session, index) => {
+            sessions.forEach((session) => {
                 if (session.group !== currentGroup) {
-                    if (currentGroup !== '') {
-                        html += '</ul>';
-                    }
-                    html += `<div class="session-group"><h3>${session.group}</h3><ul class="session-list">`;
+                    if (currentGroup !== '') html += '</ul>';
+                    html += `<div class="nav-section"><h3 class="nav-section-title">${session.group}</h3><ul class="sidebar-nav">`;
                     currentGroup = session.group;
                 }
 
                 html += `
-                    <li>
-                        <a href="#session-${session.number}" class="session-link" data-session="${session.folder}">
-                            <span class="session-number">${session.number}</span>
-                            <span class="session-title">${session.title}</span>
+                    <li class="nav-item">
+                        <a href="#session-${session.number}" class="nav-link" data-session="${session.folder}">
+                            <span class="nav-icon">${session.number}</span>
+                            <span class="nav-title">${session.title}</span>
                         </a>
                     </li>
                 `;
             });
 
             html += '</ul></div>';
-            sidebar.innerHTML = html;
+            sidebarNav.innerHTML = html;
         }
 
-        // Load a page (home, curriculum, or session)
         function loadPage(page, session = null) {
             currentPage = page;
             currentSession = session;
 
-            // Update active states
-            document.querySelectorAll('.nav-home, .nav-curriculum').forEach(el => {
-                el.classList.remove('active');
-            });
-            document.querySelectorAll('.session-link').forEach(el => {
-                el.classList.remove('active');
-            });
+            document.querySelectorAll('.nav-home, .nav-curriculum').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.nav-link').forEach(el => el.classList.remove('active'));
 
             if (page === 'home') {
                 document.querySelector('.nav-home').classList.add('active');
-                renderHomePage();
+                document.getElementById('content-header').innerHTML = '';
             } else if (page === 'curriculum') {
                 document.querySelector('.nav-curriculum').classList.add('active');
-                loadMarkdown('curriculum.md');
+                document.getElementById('content-header').innerHTML = '<h1>Curriculum</h1><p class="subtitle">Complete course overview and session details</p>';
             } else if (session) {
-                const link = document.querySelector(`[data-session="${session}"]`);
-                if (link) link.classList.add('active');
                 const sessionObj = sessions.find(s => s.folder === session);
                 if (sessionObj) {
-                    loadSessionContent(sessionObj);
+                    const link = document.querySelector(`[data-session="${session}"]`);
+                    if (link) link.classList.add('active');
+                    document.getElementById('content-header').innerHTML = `<h1>Session ${sessionObj.number}: ${sessionObj.title}</h1><p class="subtitle">${sessionObj.group}</p>`;
                 }
             }
 
-            // Scroll to top
+            if (page === 'home') {
+                renderHomePage();
+            } else if (page === 'curriculum') {
+                loadMarkdown('curriculum.md');
+            } else if (session) {
+                const sessionObj = sessions.find(s => s.folder === session);
+                if (sessionObj) loadSessionContent(sessionObj);
+            }
+
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
-        // Render the home page
         function renderHomePage() {
             const content = document.getElementById('content');
-            
             content.innerHTML = `
-                <div class="home-page">
-                    <section class="hero-section">
-                        <h1>Software Architecture</h1>
-                        <p>Welcome to the ITA Software Architecture course for Fall 2026 at EK Business Academy Copenhagen. This 29-session course will teach you to recognize architectural decisions in real systems, make and defend your own architectural choices, and read and critique system specifications and codebases you've never seen before.</p>
-                        <a href="#curriculum" class="cta-button nav-curriculum">View Full Curriculum</a>
-                    </section>
-
-                    <section class="course-overview">
-                        <h2>Course Overview</h2>
-                        <div class="stats-grid">
-                            <div class="stat-card">
-                                <span class="stat-number">29</span>
-                                <span class="stat-label">Sessions</span>
-                            </div>
-                            <div class="stat-card">
-                                <span class="stat-number">3h</span>
-                                <span class="stat-label">Per Session</span>
-                            </div>
-                            <div class="stat-card">
-                                <span class="stat-number">5</span>
-                                <span class="stat-label">Blocks</span>
-                            </div>
-                        </div>
-                        
-                        <h3>Course Structure</h3>
-                        <ul>
-                            <li><strong>Sessions 1:</strong> Introduction to 3rd semester and toolkit setup</li>
-                            <li><strong>Sessions 2-5:</strong> IT-infrastructure foundations (hands-on, keyboard-first)</li>
-                            <li><strong>Sessions 6-13 & 18-21:</strong> Architecture teaching with real codebases</li>
-                            <li><strong>Sessions 14-17:</strong> Mid-semester project (small distributed system)</li>
-                            <li><strong>Sessions 22-29:</strong> Exam project with real customers</li>
-                        </ul>
-
-                        <h3>What You'll Learn</h3>
-                        <p>This course teaches software architecture as <em>decisions, boundaries, and conventions</em> — the rules a system commits to so it can grow without collapsing under its own weight. You'll learn to:</p>
-                        <ul>
-                            <li>Recognize architectural decisions in real systems</li>
-                            <li>Make and defend your own architectural choices</li>
-                            <li>Read and critique system specifications, REST APIs, or codebases</li>
-                            <li>Use AI coding agents (like Mistral Vibe) to investigate codebases</li>
-                        </ul>
-
-                        <h3>Key Tools & Codebases</h3>
-                        <ul>
-                            <li><strong>Mistral Vibe:</strong> Your AI coding agent for investigating codebases</li>
-                            <li><strong>mistral-vibe-ek-ita:</strong> The spine codebase you'll study in Sessions 6-9</li>
-                            <li><strong>Gitea:</strong> A real server-side, multi-user system for Sessions 11-13, 18-20</li>
-                            <li><strong>ek-ita-swa-examples:</strong> Runnable minimal examples</li>
-                        </ul>
-                    </section>
+                <div class="hero">
+                    <h1>Software Architecture</h1>
+                    <p>Welcome to the ITA Software Architecture course for Fall 2026 at EK Business Academy Copenhagen. This 29-session course will teach you to recognize architectural decisions in real systems, make and defend your own architectural choices, and read and critique system specifications and codebases you've never seen before.</p>
+                    <a href="#curriculum" class="cta-button nav-curriculum">View Full Curriculum</a>
                 </div>
+
+                <section class="course-overview">
+                    <h2>Course Overview</h2>
+                    <div class="stats-grid">
+                        <div class="stat-card"><span class="stat-number">29</span><span class="stat-label">Sessions</span></div>
+                        <div class="stat-card"><span class="stat-number">3h</span><span class="stat-label">Per Session</span></div>
+                        <div class="stat-card"><span class="stat-number">5</span><span class="stat-label">Blocks</span></div>
+                    </div>
+                    <h3>Course Structure</h3>
+                    <ul>
+                        <li><strong>Session 1:</strong> Introduction to 3rd semester and toolkit setup</li>
+                        <li><strong>Sessions 2-5:</strong> IT-infrastructure foundations (hands-on, keyboard-first)</li>
+                        <li><strong>Sessions 6-13 & 18-21:</strong> Architecture teaching with real codebases</li>
+                        <li><strong>Sessions 14-17:</strong> Mid-semester project (small distributed system)</li>
+                        <li><strong>Sessions 22-29:</strong> Exam project with real customers</li>
+                    </ul>
+                    <h3>What You'll Learn</h3>
+                    <p>This course teaches software architecture as <em>decisions, boundaries, and conventions</em> the rules a system commits to so it can grow without collapsing under its own weight. You'll learn to:</p>
+                    <ul>
+                        <li>Recognize architectural decisions in real systems</li>
+                        <li>Make and defend your own architectural choices</li>
+                        <li>Read and critique system specifications, REST APIs, or codebases</li>
+                        <li>Use AI coding agents (like Mistral Vibe) to investigate codebases</li>
+                    </ul>
+                    <h3>Key Tools & Codebases</h3>
+                    <ul>
+                        <li><strong>Mistral Vibe:</strong> Your AI coding agent for investigating codebases</li>
+                        <li><strong>mistral-vibe-ek-ita:</strong> The spine codebase you'll study in Sessions 6-9</li>
+                        <li><strong>Gitea:</strong> A real server-side, multi-user system for Sessions 11-13, 18-20</li>
+                        <li><strong>ek-ita-swa-examples:</strong> Runnable minimal examples</li>
+                    </ul>
+                </section>
             `;
         }
 
-        // Load and render a markdown file
         function loadMarkdown(file) {
             const content = document.getElementById('content');
             content.innerHTML = '<div class="loading"><div class="spinner"></div><p>Loading...</p></div>';
-
             fetch(file)
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('File not found');
-                    }
-                    return response.text();
-                })
-                .then(text => {
-                    // Custom rendering for curriculum.md
-                    if (file === 'curriculum.md') {
-                        renderCurriculum(text);
-                    } else {
-                        renderMarkdown(text);
-                    }
-                })
+                .then(response => response.ok ? response.text() : Promise.reject(new Error('File not found')))
+                .then(text => file === 'curriculum.md' ? renderCurriculum(text) : renderMarkdown(text))
                 .catch(error => {
-                    content.innerHTML = `<h2>Error Loading Content</h2><p>The file ${file} could not be loaded.</p>`;
+                    content.innerHTML = `<div class="alert alert-important"><h2>Error Loading Content</h2><p>The file ${file} could not be loaded.</p></div>`;
                     console.error('Error loading file:', error);
                 });
         }
 
-        // Render curriculum with custom formatting
         function renderCurriculum(text) {
             const content = document.getElementById('content');
-            
-            // Parse the markdown but add custom curriculum styling
             const html = marked.parse(text);
-            
-            content.innerHTML = `
-                <h1>Curriculum - Software Architecture (ITA, Fall 2026)</h1>
-                ${html}
-            `;
+            content.innerHTML = html;
         }
 
-        // Load session content
         function loadSessionContent(session) {
             const content = document.getElementById('content');
             content.innerHTML = '<div class="loading"><div class="spinner"></div><p>Loading session content...</p></div>';
-
-            // Try to load the session README
             const readmePath = `${session.folder}/README.md`;
-            
             fetch(readmePath)
-                .then(response => {
-                    if (!response.ok) {
-                        // Session folder might not have a README yet
-                        throw new Error('No README found');
-                    }
-                    return response.text();
-                })
-                .then(text => {
-                    renderSession(text, session);
-                })
-                .catch(error => {
-                    // Show session info even if README is missing
-                    renderSessionInfo(session);
-                });
+                .then(response => response.ok ? response.text() : Promise.reject(new Error('No README found')))
+                .then(text => renderSession(text, session))
+                .catch(error => renderSessionInfo(session));
         }
 
-        // Render session markdown
         function renderSession(markdown, session) {
             const content = document.getElementById('content');
-            
-            // Custom pre-processing for better display
-            // Add session header
-            let processed = `# Session ${session.number}: ${session.title}\n\n`;
-            processed += markdown;
-            
-            // Parse markdown
+            let processed = `# Session ${session.number}: ${session.title}\n\n${markdown}`;
             const html = marked.parse(processed);
-            
-            content.innerHTML = `
-                <div class="session-content">
-                    ${html}
-                </div>
-            `;
-            
-            // Re-render any mermaid diagrams
+            content.innerHTML = `<div class="session-content">${html}</div>`;
             setTimeout(renderMermaidDiagrams, 100);
         }
 
-        // Render basic session info when README is missing
         function renderSessionInfo(session) {
             const content = document.getElementById('content');
             content.innerHTML = `
-                <h1>Session ${session.number}: ${session.title}</h1>
-                <p>This session's content is coming soon. Check back later for detailed information about this session.</p>
-                <h2>Session Details</h2>
-                <ul>
-                    <li><strong>Session Number:</strong> ${session.number}</li>
-                    <li><strong>Title:</strong> ${session.title}</li>
-                    <li><strong>Block:</strong> ${session.group}</li>
-                </ul>
+                <div class="alert alert-note">
+                    <h2>Session ${session.number}: ${session.title}</h2>
+                    <p>This session content is coming soon.</p>
+                    <h3>Session Details</h3>
+                    <ul>
+                        <li><strong>Session Number:</strong> ${session.number}</li>
+                        <li><strong>Title:</strong> ${session.title}</li>
+                        <li><strong>Block:</strong> ${session.group}</li>
+                    </ul>
+                </div>
             `;
         }
 
-        // Setup navigation
         function setupNavigation() {
-            // Top navigation
-            document.querySelector('.nav-home').addEventListener('click', (e) => {
-                e.preventDefault();
-                loadPage('home');
-            });
-
-            document.querySelector('.nav-curriculum').addEventListener('click', (e) => {
-                e.preventDefault();
-                loadPage('curriculum');
-            });
-
-            // Sidebar navigation
-            document.querySelectorAll('.session-link').forEach(link => {
-                link.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    const session = link.getAttribute('data-session');
-                    loadPage('session', session);
+            document.querySelector('.nav-home').addEventListener('click', (e) => { e.preventDefault(); loadPage('home'); });
+            document.querySelector('.nav-curriculum').addEventListener('click', (e) => { e.preventDefault(); loadPage('curriculum'); });
+            setTimeout(() => {
+                document.querySelectorAll('.nav-link').forEach(link => {
+                    link.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        loadPage('session', link.getAttribute('data-session'));
+                    });
                 });
-            });
-
-            // Handle hash changes
+            }, 100);
             window.addEventListener('hashchange', () => {
                 const hash = window.location.hash.substring(1);
                 if (hash.startsWith('session-')) {
-                    const sessionNum = hash.substring(8);
-                    const session = sessions.find(s => s.number.toString() === sessionNum);
-                    if (session) {
-                        loadPage('session', session.folder);
-                    }
-                } else if (hash === 'curriculum') {
-                    loadPage('curriculum');
-                } else {
-                    loadPage('home');
-                }
+                    const session = sessions.find(s => s.number.toString() === hash.substring(8));
+                    if (session) loadPage('session', session.folder);
+                } else if (hash === 'curriculum') loadPage('curriculum');
+                else loadPage('home');
             });
-
-            // Check initial hash
             const initialHash = window.location.hash.substring(1);
             if (initialHash) {
                 if (initialHash.startsWith('session-')) {
-                    const sessionNum = initialHash.substring(8);
-                    const session = sessions.find(s => s.number.toString() === sessionNum);
-                    if (session) {
-                        loadPage('session', session.folder);
-                    }
-                } else if (initialHash === 'curriculum') {
-                    loadPage('curriculum');
-                }
+                    const session = sessions.find(s => s.number.toString() === initialHash.substring(8));
+                    if (session) loadPage('session', session.folder);
+                } else if (initialHash === 'curriculum') loadPage('curriculum');
             }
         }
 
-        // Setup scroll to top button
-        function setupScrollToTop() {
-            const scrollButton = document.querySelector('.scroll-to-top');
-            
-            window.addEventListener('scroll', () => {
-                if (window.pageYOffset > 300) {
-                    scrollButton.classList.add('visible');
-                } else {
-                    scrollButton.classList.remove('visible');
-                }
-            });
-
-            scrollButton.addEventListener('click', (e) => {
-                e.preventDefault();
-                window.scrollTo({ top: 0, behavior: 'smooth' });
+        function setupSearch() {
+            const searchInput = document.getElementById('search-input');
+            searchInput.addEventListener('input', (e) => {
+                const query = e.target.value.toLowerCase();
+                document.querySelectorAll('.nav-link').forEach(link => {
+                    const title = link.querySelector('.nav-title').textContent.toLowerCase();
+                    const number = link.querySelector('.nav-icon').textContent.toLowerCase();
+                    link.style.display = (number + ' ' + title).includes(query) ? 'flex' : 'none';
+                });
             });
         }
 
-        // Initialize Mermaid diagrams
+        function setupScrollToTop() {
+            const scrollButton = document.querySelector('.scroll-to-top');
+            window.addEventListener('scroll', () => {
+                scrollButton.classList.toggle('visible', window.pageYOffset > 300);
+            });
+            scrollButton.addEventListener('click', (e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }); });
+        }
+
         function renderMermaidDiagrams() {
             if (typeof mermaid !== 'undefined') {
                 mermaid.initialize({ startOnLoad: false });
                 document.querySelectorAll('.mermaid').forEach(el => {
                     try {
-                        const graphDefinition = el.textContent;
-                        mermaid.mermaidAPI.render('mermaid-' + Math.random().toString(36).substring(7), graphDefinition, (svgCode) => {
-                            el.innerHTML = svgCode;
-                        });
-                    } catch (e) {
-                        console.log('Mermaid error:', e);
-                    }
+                        mermaid.mermaidAPI.render('mermaid-' + Math.random().toString(36).substring(7), el.textContent, (svgCode) => { el.innerHTML = svgCode; });
+                    } catch (e) { console.log('Mermaid error:', e); }
                 });
             }
         }
 
-        // Load Mermaid.js
         function loadMermaid() {
             const script = document.createElement('script');
             script.src = 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js';
@@ -1017,7 +1076,6 @@
             document.head.appendChild(script);
         }
 
-        // Initialize the app when DOM is ready
         document.addEventListener('DOMContentLoaded', () => {
             init();
             loadMermaid();

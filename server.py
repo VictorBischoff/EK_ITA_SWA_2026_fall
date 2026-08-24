@@ -50,12 +50,13 @@ class CourseHandler(http.server.SimpleHTTPRequestHandler):
             if file_path.suffix == '.md':
                 self.send_response(200)
                 self.send_header('Content-type', 'text/markdown; charset=utf-8')
+                self.send_header('Access-Control-Allow-Origin', '*')
                 self.end_headers()
                 with open(file_path, 'rb') as f:
                     self.wfile.write(f.read())
                 return
             
-            # For all other files, use default handler
+            # For all other files, use default handler with CORS
             return super().do_GET()
             
         except FileNotFoundError:
@@ -70,6 +71,13 @@ class CourseHandler(http.server.SimpleHTTPRequestHandler):
         # Fix for paths with query strings or fragments
         path = path.split('?')[0].split('#')[0]
         return super().translate_path(path)
+    
+    def end_headers(self):
+        # Add CORS headers for all responses
+        self.send_header('Access-Control-Allow-Origin', '*')
+        self.send_header('Access-Control-Allow-Methods', 'GET, OPTIONS')
+        self.send_header('Access-Control-Allow-Headers', 'Content-Type')
+        super().end_headers()
 
 
 def run_server(port=8000, bind='0.0.0.0'):
