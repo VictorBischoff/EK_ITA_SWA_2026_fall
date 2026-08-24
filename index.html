@@ -893,13 +893,13 @@
                 document.getElementById('content-header').innerHTML = '';
             } else if (page === 'curriculum') {
                 document.querySelector('.nav-curriculum').classList.add('active');
-                document.getElementById('content-header').innerHTML = '<h1>Curriculum</h1><p class="subtitle">Complete course overview and session details</p>';
+                document.getElementById('content-header').innerHTML = '';
             } else if (session) {
                 const sessionObj = sessions.find(s => s.folder === session);
                 if (sessionObj) {
                     const link = document.querySelector(`[data-session="${session}"]`);
                     if (link) link.classList.add('active');
-                    document.getElementById('content-header').innerHTML = `<h1>Session ${sessionObj.number}: ${sessionObj.title}</h1><p class="subtitle">${sessionObj.group}</p>`;
+                    document.getElementById('content-header').innerHTML = `<p class="subtitle">${sessionObj.group}</p>`;
                 }
             }
 
@@ -973,7 +973,7 @@
         function renderCurriculum(text) {
             const content = document.getElementById('content');
             const html = marked.parse(text);
-            content.innerHTML = html;
+            content.innerHTML = `<div class="session-content">${html}</div>`;
         }
 
         function loadSessionContent(session) {
@@ -988,8 +988,7 @@
 
         function renderSession(markdown, session) {
             const content = document.getElementById('content');
-            let processed = `# Session ${session.number}: ${session.title}\n\n${markdown}`;
-            const html = marked.parse(processed);
+            const html = marked.parse(markdown);
             content.innerHTML = `<div class="session-content">${html}</div>`;
             setTimeout(renderMermaidDiagrams, 100);
         }
