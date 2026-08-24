@@ -1,0 +1,37 @@
+version: '3.8'
+
+# Docker Compose configuration for the Software Architecture course frontend
+# 
+# Usage:
+#   Start:  docker-compose up -d
+#   Stop:   docker-compose down
+#   View:   Open http://localhost:8000 in your browser
+#   Logs:   docker-compose logs -f
+#
+# For development with auto-reload (if you have Python on host):
+#   Just run: python server.py
+
+services:
+  course-frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ek-ita-swa-frontend
+    ports:
+      - "8000:8000"
+    volumes:
+      # Mount the current directory for live content updates
+      - .:/app:ro
+    restart: unless-stopped
+    environment:
+      - PYTHONUNBUFFERED=1
+
+  # Optional: Add a reverse proxy for production (uncomment if needed)
+  # nginx:
+  #   image: nginx:alpine
+  #   ports:
+  #     - "80:80"
+  #   volumes:
+  #     - ./nginx.conf:/etc/nginx/nginx.conf:ro
+  #   depends_on:
+  #     - course-frontend
