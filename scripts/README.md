@@ -16,24 +16,33 @@ git remote -v
 
 ## Scripts
 
+`auto_update.py` is the single source of truth for the fetch/merge logic —
+`update-from-upstream.sh` and `server.py`'s `/api/update` endpoint both call
+into it rather than each reimplementing git commands.
+
+It **refuses to run if the working tree has local changes**, rather than
+auto-stashing them: an unattended stash → merge → pop that later conflicts
+leaves the repo in a broken, half-merged state discovered only when someone
+next opens the file (this is exactly how `server.py` ended up with unresolved
+conflict markers committed to it). Commit or stash your changes first.
+
+Pushing to your fork is **opt-in** (`--push`), not automatic. An unattended
+job that force-merges upstream and pushes with no review is the riskiest part
+of this whole setup — think about whether you actually want that before
+wiring it into cron.
+
 ### 1. auto_update.py (Recommended)
 
-Python script for fully automatic updates. Handles all edge cases:
-- Adds upstream remote if missing
-- Stashes local changes automatically
-- Attempts fast-forward merge, falls back to regular merge
-- Pushes to your fork automatically
-- Returns to your original branch
-- Reapplies stashed changes
-
-**Usage:**
 ```bash
-python scripts/auto_update.py
+python scripts/auto_update.py          # fetch + merge only
+python scripts/auto_update.py --push   # also push the merge to origin
 ```
 
 **For Automatic Execution (macOS/Linux):**
 
-Add to crontab to run hourly:
+If you do want unattended updates on a schedule, decide deliberately whether
+to include `--push`. Fetch+merge only (no `--push`) is the safer default —
+it updates your local checkout without publishing anything:
 ```bash
 # Edit crontab
 crontab -e
@@ -78,12 +87,14 @@ launchctl load ~/.Library/LaunchAgents/com.auto.update.plist
 
 ### 2. update-from-upstream.sh
 
-Bash script alternative for manual updates.
+Thin shell wrapper around `auto_update.py`, for people who prefer running a
+`.sh` script. Same flags apply.
 
 **Usage:**
 ```bash
 chmod +x scripts/update-from-upstream.sh
-./scripts/update-from-upstream.sh
+./scripts/update-from-upstream.sh          # fetch + merge only
+./scripts/update-from-upstream.sh --push   # also push
 ```
 
 ## Manual Update

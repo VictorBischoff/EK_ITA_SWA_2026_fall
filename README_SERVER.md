@@ -2,6 +2,14 @@
 
 This document explains how to run the Software Architecture course frontend on your local machine.
 
+> **Just want to read the course material?** The frontend is static after the
+> initial load, so a static host (GitHub Pages, Netlify, Vercel — see
+> [Production Deployment](#production-deployment)) plus a plain `git pull` to
+> update is simpler than running `server.py` and has no server-side attack
+> surface at all. The custom server here mainly exists for the in-browser
+> "Update" button (`/api/update`), which runs `git merge` on your machine —
+> only worth it if you want that convenience.
+
 ## Quick Start
 
 ### Option 1: Python Server (Recommended)
@@ -63,6 +71,7 @@ docker-compose down
 - **Markdown Support**: `.md` files are served with correct content-type
 - **Automatic index.html**: Directory requests automatically serve index.html
 - **Live Reload**: When using Docker Compose with volume mount, content updates are reflected immediately
+- **Update button** (`/api/update`): fetches and merges from the configured `upstream` remote (see `scripts/README.md`). Restricted to requests from `localhost` — even if you bind the server to `0.0.0.0` so classmates on your LAN can view the site, they cannot trigger a merge on your machine through the button. It never pushes.
 
 ## Command Line Options
 
