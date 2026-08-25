@@ -1,0 +1,41 @@
+name: Sync from upstream
+
+# Keeps this fork's master in sync with the upstream course repo, so the
+# GitHub Pages site reflects upstream changes without anyone needing to run
+# the update script or click the (localhost-only) Update button by hand.
+# A push here to master triggers the existing Pages branch-deploy automatically.
+#
+# This calls scripts/auto_update.py --push, the same fetch/merge logic used
+# locally, but here in CI is the right place for the --push side of it: the
+# job runs on a fresh checkout (never a dirty working tree) and pushes with
+# a token scoped to this repo only, not a personal credential on a laptop.
+# If upstream's changes don't merge cleanly, this step fails loudly (visible
+# as a red X in the Actions tab) instead of silently forcing anything.
+
+on:
+  schedule:
+    - cron: '0 */6 * * *'
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Configure git identity
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Fetch, merge, and push upstream changes
+        run: python scripts/auto_update.py --push

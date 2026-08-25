@@ -14,11 +14,28 @@ You can verify this with:
 git remote -v
 ```
 
+## Keeping the GitHub Pages site in sync (recommended)
+
+`.github/workflows/sync-upstream.yml` runs `auto_update.py --push` on a
+schedule (every 6 hours) and on manual dispatch, in GitHub's own runners —
+not on a laptop. It fetches upstream, merges into `master`, and pushes with
+the workflow's own scoped `GITHUB_TOKEN`, which then triggers the existing
+Pages branch-deploy automatically. This is the same merge logic used
+everywhere else, just running unattended in a place where that's actually
+safe: a fresh checkout every run (never a dirty working tree) and a
+repo-scoped token instead of a personal one. If upstream's changes don't
+merge cleanly, the workflow run just fails (visible in the Actions tab)
+rather than forcing anything.
+
+Trigger it manually with `gh workflow run sync-upstream.yml`, or from the
+repo's Actions tab.
+
 ## Scripts
 
 `auto_update.py` is the single source of truth for the fetch/merge logic —
-`update-from-upstream.sh` and `server.py`'s `/api/update` endpoint both call
-into it rather than each reimplementing git commands.
+`update-from-upstream.sh`, `server.py`'s `/api/update` endpoint, and the
+`sync-upstream.yml` workflow all call into it rather than each
+reimplementing git commands.
 
 It **refuses to run if the working tree has local changes**, rather than
 auto-stashing them: an unattended stash → merge → pop that later conflicts
