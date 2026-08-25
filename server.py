@@ -76,108 +76,137 @@ class CourseHandler(http.server.SimpleHTTPRequestHandler):
     
     def handle_update(self):
         """Handle the /api/update endpoint to pull from upstream."""
+        repo_dir = Path(__file__).parent
+        
         try:
-            # Run the update script
-            repo_dir = Path(__file__).parent
-            update_script = repo_dir / 'scripts' / 'auto_update.py'
+            # Step 1: Get current branch
+            current_branch = subprocess.run(
+                ['git', 'rev-parse', '--abbrev-ref', 'HEAD'],
+                cwd=repo_dir,
+                capture_output=True,
+                text=True
+            )
             
-            if update_script.exists():
-                # Run the update script
-                result = subprocess.run(
-                    [sys.executable, str(update_script)],
+            # Step 2: Stash any local changes
+            stash_result = subprocess.run(
+                ['git', 'stash', 'push', '-m', 'Auto-stash before upstream update'],
+                cwd=repo_dir,
+                capture_output=True,
+                text=True
+            )
+            stashed = stash_result.returncode == 0
+            
+            # Step 3: Fetch from upstream
+            fetch_result = subprocess.run(
+                ['git', 'fetch', 'upstream'],
+                cwd=repo_dir,
+                capture_output=True,
+                text=True
+            )
+            
+            if fetch_result.returncode != 0:
+                response = {
+                    'success': False,
+                    'message': 'Failed to fetch from upstream',
+                    'error': fetch_result.stderr or fetch_result.stdout,
+                    'step': 'fetch'
+                }
+                self.send_response(500)
+                self._send_json(response)
+                return
+            
+            # Step 4: Checkout master if not already there
+            if current_branch.stdout.strip() != 'master':
+                checkout_result = subprocess.run(
+                    ['git', 'checkout', 'master'],
                     cwd=repo_dir,
                     capture_output=True,
                     text=True
                 )
-                
-                if result.returncode == 0:
-                    response = {
-                        'success': True,
-                        'message': 'Successfully updated from upstream',
-                        'output': result.stdout
-                    }
-                    self.send_response(200)
-                else:
+                if checkout_result.returncode != 0:
                     response = {
                         'success': False,
-                        'message': 'Failed to update from upstream',
-                        'error': result.stderr or result.stdout
+                        'message': 'Failed to checkout master branch',
+                        'error': checkout_result.stderr or checkout_result.stdout,
+                        'step': 'checkout'
                     }
                     self.send_response(500)
-            else:
-                # Fallback: run git commands directly
-                result = subprocess.run(
-                    ['git', 'fetch', 'upstream'],
+                    self._send_json(response)
+                    return
+            
+            # Step 5: Merge from upstream/master
+            merge_result = subprocess.run(
+                ['git', 'merge', 'upstream/master', '--no-edit', '-m', 'Auto-merge upstream changes'],
+                cwd=repo_dir,
+                capture_output=True,
+                text=True
+            )
+            
+            if merge_result.returncode != 0:
+                response = {
+                    'success': False,
+                    'message': 'Failed to merge upstream changes',
+                    'error': merge_result.stderr or merge_result.stdout,
+                    'step': 'merge'
+                }
+                self.send_response(500)
+                self._send_json(response)
+                return
+            
+            # Step 6: Try to push to origin (may fail if no push permissions)
+            push_result = subprocess.run(
+                ['git', 'push', 'origin', 'master'],
+                cwd=repo_dir,
+                capture_output=True,
+                text=True
+            )
+            
+            # Reapply stashed changes
+            if stashed:
+                subprocess.run(
+                    ['git', 'stash', 'pop'],
                     cwd=repo_dir,
                     capture_output=True,
                     text=True
                 )
-                
-                if result.returncode == 0:
-                    # Try to merge
-                    merge_result = subprocess.run(
-                        ['git', 'merge', 'upstream/master', '--no-edit', '-m', 'Auto-merge upstream'],
-                        cwd=repo_dir,
-                        capture_output=True,
-                        text=True
-                    )
-                    
-                    if merge_result.returncode == 0:
-                        push_result = subprocess.run(
-                            ['git', 'push', 'origin', 'master'],
-                            cwd=repo_dir,
-                            capture_output=True,
-                            text=True
-                        )
-                        
-                        if push_result.returncode == 0:
-                            response = {
-                                'success': True,
-                                'message': 'Successfully updated from upstream',
-                                'fetch': result.stdout,
-                                'merge': merge_result.stdout,
-                                'push': push_result.stdout
-                            }
-                            self.send_response(200)
-                        else:
-                            response = {
-                                'success': False,
-                                'message': 'Failed to push to origin',
-                                'error': push_result.stderr or push_result.stdout
-                            }
-                            self.send_response(500)
-                    else:
-                        response = {
-                            'success': False,
-                            'message': 'Failed to merge upstream changes',
-                            'error': merge_result.stderr or merge_result.stdout
-                        }
-                        self.send_response(500)
-                else:
-                    response = {
-                        'success': False,
-                        'message': 'Failed to fetch from upstream',
-                        'error': result.stderr or result.stdout
-                    }
-                    self.send_response(500)
             
-            # Send JSON response
-            self.send_header('Content-type', 'application/json; charset=utf-8')
-            self.send_header('Access-Control-Allow-Origin', '*')
-            self.end_headers()
-            self.wfile.write(json.dumps(response, indent=2).encode('utf-8'))
+            # Return to original branch if not master
+            if current_branch.stdout.strip() != 'master':
+                subprocess.run(
+                    ['git', 'checkout', current_branch.stdout.strip()],
+                    cwd=repo_dir,
+                    capture_output=True,
+                    text=True
+                )
+            
+            # Prepare successful response
+            response = {
+                'success': True,
+                'message': 'Successfully updated from upstream',
+                'fetch': fetch_result.stdout.strip(),
+                'merge': merge_result.stdout.strip(),
+                'push': push_result.stdout.strip() if push_result.returncode == 0 else 'Push failed (may need permissions)',
+                'stashed': stashed
+            }
+            self.send_response(200)
             
         except Exception as e:
             response = {
                 'success': False,
                 'message': 'Internal server error',
-                'error': str(e)
+                'error': str(e),
+                'step': 'exception'
             }
             self.send_response(500)
-            self.send_header('Content-type', 'application/json; charset=utf-8')
-            self.send_header('Access-Control-Allow-Origin', '*')
-            self.end_headers()
-            self.wfile.write(json.dumps(response, indent=2).encode('utf-8'))
+        
+        self._send_json(response)
+    
+    def _send_json(self, data):
+        """Helper to send JSON response."""
+        self.send_header('Content-type', 'application/json; charset=utf-8')
+        self.send_header('Access-Control-Allow-Origin', '*')
+        self.end_headers()
+        self.wfile.write(json.dumps(data, indent=2).encode('utf-8'))
 
     def translate_path(self, path):
         # Fix for paths with query strings or fragments
