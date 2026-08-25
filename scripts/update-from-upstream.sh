@@ -1,40 +1,56 @@
 #!/bin/bash
-# Script to pull latest changes from the upstream repository
-# This script assumes the upstream is ClausBove/EK_ITA_SWA_2026_fall
+# Automatically pull latest changes from the upstream repository
+# This script fetches from ClausBove/EK_ITA_SWA_2026_fall and merges into master
 
 set -e
 
-echo "=========================================="
-echo " Updating from Upstream Repository"
-echo "=========================================="
-echo ""
+# Ensure we're in the correct directory
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_DIR="$(dirname "$SCRIPT_DIR")"
+cd "$REPO_DIR"
 
-# Check if upstream remote exists, if not add it
-if git remote | grep -q "^upstream$"; then
-    echo "Upstream remote already exists."
-else
-    echo "Adding upstream remote..."
+# Ensure upstream remote exists
+if ! git remote | grep -q "^upstream$"; then
     git remote add upstream https://github.com/ClausBove/EK_ITA_SWA_2026_fall.git
-    echo "Upstream remote added: upstream"
 fi
 
-echo ""
+# Stash any local changes
+if ! git diff --quiet; then
+    git stash push -m "Auto-stash before upstream update"
+    STASHED=1
+else
+    STASHED=0
+fi
+
+# Fetch from upstream
 echo "Fetching from upstream..."
-git fetch upstream
+git fetch upstream 2>&1
 
-echo ""
-echo "Checking out master branch..."
-git checkout master
+# Get current branch
+CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
 
-echo ""
-echo "Merging changes from upstream/master..."
-git merge upstream/master --no-ff -m "Merge upstream changes from ClausBove/EK_ITA_SWA_2026_fall"
+# Checkout master
+git checkout master 2>&1
 
-echo ""
-echo "=========================================="
-echo " Update Complete!"
-echo "=========================================="
-echo ""
-echo "To push these changes to your fork:"
-echo "  git push origin master"
-echo ""
+# Fast-forward merge from upstream
+echo "Updating from upstream/master..."
+git merge --ff-only upstream/master 2>&1 || {
+    # If fast-forward fails, try regular merge
+    git merge upstream/master --no-edit -m "Auto-merge upstream changes" 2>&1
+}
+
+# Return to original branch if not master
+if [ "$CURRENT_BRANCH" != "master" ]; then
+    git checkout "$CURRENT_BRANCH" 2>&1
+fi
+
+# Reapply stashed changes if any
+if [ "$STASHED" -eq 1 ]; then
+    git stash pop 2>&1
+fi
+
+# Push to origin if on master
+git checkout master 2>&1
+git push origin master 2>&1
+
+echo "Upstream update complete."
