@@ -24,6 +24,7 @@ import os
 import sys
 import subprocess
 import json
+import signal
 from pathlib import Path
 
 # Custom request handler to serve index.html for root path
@@ -191,11 +192,53 @@ class CourseHandler(http.server.SimpleHTTPRequestHandler):
         super().end_headers()
 
 
+class GracefulTCPServer(socketserver.TCPServer):
+    """TCPServer that handles SIGTERM for graceful shutdown."""
+    allow_reuse_address = True
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._shutdown_request = False
+    
+    def serve_forever(self, poll_interval=0.5):
+        """Handle one request at a time until shutdown."""
+        self._shutdown_request = False
+        try:
+            while not self._shutdown_request:
+                self.handle_request()
+        finally:
+            self.server_close()
+    
+    def shutdown(self):
+        """Stop the serve_forever loop."""
+        self._shutdown_request = True
+        # Send a dummy request to unblock the server
+        try:
+            import socket
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            s.connect((self.server_address[0], self.server_address[1]))
+            s.close()
+        except:
+            pass
+
+
+def signal_handler(signum, frame):
+    """Handle termination signals gracefully."""
+    print(f"\n\nReceived signal {signum}, shutting down server...")
+    sys.exit(0)
+
+
 def run_server(port=8000, bind='0.0.0.0'):
-    """Start the HTTP server."""
+    """Start the HTTP server with graceful shutdown handling."""
     Handler = CourseHandler
     
-    with socketserver.TCPServer((bind, port), Handler) as httpd:
+    # Register signal handlers for graceful shutdown
+    signal.signal(signal.SIGINT, signal_handler)  # Ctrl+C
+    signal.signal(signal.SIGTERM, signal_handler)  # Termination signal
+    
+    httpd = GracefulTCPServer((bind, port), Handler)
+    
+    try:
         print(f"\n{'='*60}")
         print(f"  Software Architecture Course Server")
         print(f"{'='*60}")
@@ -208,11 +251,13 @@ def run_server(port=8000, bind='0.0.0.0'):
         print(f"  Press Ctrl+C to stop the server")
         print(f"{'='*60}\n")
         
-        try:
-            httpd.serve_forever()
-        except KeyboardInterrupt:
-            print("\n\nServer stopped.")
-            sys.exit(0)
+        httpd.serve_forever()
+    except KeyboardInterrupt:
+        print("\n\nServer stopped by user.")
+    finally:
+        httpd.server_close()
+        print("Server socket closed.")
+        sys.exit(0)
 
 
 if __name__ == '__main__':
