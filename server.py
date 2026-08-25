@@ -22,6 +22,8 @@ import socketserver
 import argparse
 import os
 import sys
+import subprocess
+import json
 from pathlib import Path
 
 # Custom request handler to serve index.html for root path
@@ -30,6 +32,10 @@ class CourseHandler(http.server.SimpleHTTPRequestHandler):
         super().__init__(*args, **kwargs)
     
     def do_GET(self):
+        # Handle API endpoint for updating from upstream
+        if self.path == '/api/update':
+            return self.handle_update()
+        
         # If root path, serve index.html
         if self.path == '/' or self.path == '/index.html':
             self.path = '/index.html'
@@ -66,6 +72,111 @@ class CourseHandler(http.server.SimpleHTTPRequestHandler):
                 return self.do_GET()
             else:
                 self.send_error(404, f"File {self.path} not found")
+    
+    def handle_update(self):
+        """Handle the /api/update endpoint to pull from upstream."""
+        try:
+            # Run the update script
+            repo_dir = Path(__file__).parent
+            update_script = repo_dir / 'scripts' / 'auto_update.py'
+            
+            if update_script.exists():
+                # Run the update script
+                result = subprocess.run(
+                    [sys.executable, str(update_script)],
+                    cwd=repo_dir,
+                    capture_output=True,
+                    text=True
+                )
+                
+                if result.returncode == 0:
+                    response = {
+                        'success': True,
+                        'message': 'Successfully updated from upstream',
+                        'output': result.stdout
+                    }
+                    self.send_response(200)
+                else:
+                    response = {
+                        'success': False,
+                        'message': 'Failed to update from upstream',
+                        'error': result.stderr or result.stdout
+                    }
+                    self.send_response(500)
+            else:
+                # Fallback: run git commands directly
+                result = subprocess.run(
+                    ['git', 'fetch', 'upstream'],
+                    cwd=repo_dir,
+                    capture_output=True,
+                    text=True
+                )
+                
+                if result.returncode == 0:
+                    # Try to merge
+                    merge_result = subprocess.run(
+                        ['git', 'merge', 'upstream/master', '--no-edit', '-m', 'Auto-merge upstream'],
+                        cwd=repo_dir,
+                        capture_output=True,
+                        text=True
+                    )
+                    
+                    if merge_result.returncode == 0:
+                        push_result = subprocess.run(
+                            ['git', 'push', 'origin', 'master'],
+                            cwd=repo_dir,
+                            capture_output=True,
+                            text=True
+                        )
+                        
+                        if push_result.returncode == 0:
+                            response = {
+                                'success': True,
+                                'message': 'Successfully updated from upstream',
+                                'fetch': result.stdout,
+                                'merge': merge_result.stdout,
+                                'push': push_result.stdout
+                            }
+                            self.send_response(200)
+                        else:
+                            response = {
+                                'success': False,
+                                'message': 'Failed to push to origin',
+                                'error': push_result.stderr or push_result.stdout
+                            }
+                            self.send_response(500)
+                    else:
+                        response = {
+                            'success': False,
+                            'message': 'Failed to merge upstream changes',
+                            'error': merge_result.stderr or merge_result.stdout
+                        }
+                        self.send_response(500)
+                else:
+                    response = {
+                        'success': False,
+                        'message': 'Failed to fetch from upstream',
+                        'error': result.stderr or result.stdout
+                    }
+                    self.send_response(500)
+            
+            # Send JSON response
+            self.send_header('Content-type', 'application/json; charset=utf-8')
+            self.send_header('Access-Control-Allow-Origin', '*')
+            self.end_headers()
+            self.wfile.write(json.dumps(response, indent=2).encode('utf-8'))
+            
+        except Exception as e:
+            response = {
+                'success': False,
+                'message': 'Internal server error',
+                'error': str(e)
+            }
+            self.send_response(500)
+            self.send_header('Content-type', 'application/json; charset=utf-8')
+            self.send_header('Access-Control-Allow-Origin', '*')
+            self.end_headers()
+            self.wfile.write(json.dumps(response, indent=2).encode('utf-8'))
 
     def translate_path(self, path):
         # Fix for paths with query strings or fragments

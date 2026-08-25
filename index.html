@@ -121,6 +121,100 @@
             color: white;
         }
 
+        /* Update button */
+        .update-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: var(--gitbook-primary);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .update-button:hover {
+            background: var(--gitbook-primary-dark);
+            transform: translateY(-1px);
+        }
+
+        .update-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .update-button .icon {
+            font-size: 0.9rem;
+        }
+
+        .update-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: var(--gitbook-code-bg);
+            border: 1px solid var(--gitbook-border);
+            border-radius: 4px;
+            font-size: 0.85rem;
+            margin-left: 12px;
+        }
+
+        .update-status.success {
+            background: #E8F5E9;
+            border-color: var(--gitbook-success);
+            color: #1B5E20;
+        }
+
+        .update-status.error {
+            background: #FFEBEE;
+            border-color: var(--gitbook-danger);
+            color: #C62828;
+        }
+
+        .update-status .icon {
+            font-size: 0.9rem;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            padding: 16px 24px;
+            background: var(--gitbook-text);
+            color: white;
+            border-radius: 6px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            z-index: 2000;
+            animation: slideIn 0.3s ease;
+            display: none;
+        }
+
+        .toast.visible {
+            display: block;
+        }
+
+        .toast.success {
+            background: var(--gitbook-success);
+        }
+
+        .toast.error {
+            background: var(--gitbook-danger);
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
         /* Main Layout */
         .gitbook-container {
             display: flex;
@@ -786,6 +880,14 @@
             <nav class="header-nav">
                 <a href="#" class="nav-home active">Home</a>
                 <a href="#curriculum" class="nav-curriculum">Curriculum</a>
+                <button class="update-button" id="update-button" title="Fetch latest changes from upstream">
+                    <span class="icon">&#8635;</span>
+                    <span>Update</span>
+                </button>
+                <span class="update-status" id="update-status" style="display: none;">
+                    <span class="icon">&#10003;</span>
+                    <span>Up to date</span>
+                </span>
             </nav>
         </div>
     </header>
@@ -818,6 +920,7 @@
     </footer>
 
     <a href="#" class="scroll-to-top">&uarr;</a>
+    <div class="toast" id="toast"></div>
 
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script>
@@ -852,6 +955,7 @@
             setupNavigation();
             setupScrollToTop();
             setupSearch();
+            setupUpdateButton();
             renderMermaidDiagrams();
         }
 
@@ -1073,6 +1177,67 @@
             script.src = 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js';
             script.onload = renderMermaidDiagrams;
             document.head.appendChild(script);
+        }
+
+        // Setup update button
+        function setupUpdateButton() {
+            const updateButton = document.getElementById('update-button');
+            const updateStatus = document.getElementById('update-status');
+            const toast = document.getElementById('toast');
+            
+            if (!updateButton) return;
+            
+            updateButton.addEventListener('click', async () => {
+                updateButton.disabled = true;
+                updateButton.innerHTML = '<span class="icon">&#8635;</span><span>Updating...</span>';
+                
+                try {
+                    const response = await fetch('/api/update', {
+                        method: 'GET',
+                        headers: {
+                            'Accept': 'application/json'
+                        }
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        showToast('Update successful!', 'success');
+                        updateStatus.textContent = 'Up to date';
+                        updateStatus.className = 'update-status success';
+                        updateStatus.style.display = 'inline-flex';
+                        
+                        // Reload the page after a short delay
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 2000);
+                    } else {
+                        showToast(data.message || 'Update failed', 'error');
+                        updateStatus.textContent = 'Update failed';
+                        updateStatus.className = 'update-status error';
+                        updateStatus.style.display = 'inline-flex';
+                    }
+                } catch (error) {
+                    showToast('Failed to connect to server', 'error');
+                    updateStatus.textContent = 'Connection error';
+                    updateStatus.className = 'update-status error';
+                    updateStatus.style.display = 'inline-flex';
+                } finally {
+                    setTimeout(() => {
+                        updateButton.disabled = false;
+                        updateButton.innerHTML = '<span class="icon">&#8635;</span><span>Update</span>';
+                    }, 1000);
+                }
+            });
+            
+            // Show toast notification
+            function showToast(message, type) {
+                toast.textContent = message;
+                toast.className = 'toast visible ' + type;
+                setTimeout(() => {
+                    toast.classList.remove('visible');
+                }, 5000);
+            }
         }
 
         document.addEventListener('DOMContentLoaded', () => {
