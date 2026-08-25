@@ -232,11 +232,37 @@ def run_server(port=8000, bind='0.0.0.0'):
     """Start the HTTP server with graceful shutdown handling."""
     Handler = CourseHandler
     
-    # Register signal handlers for graceful shutdown
+    # Register signal handlers for graceful shutdown BEFORE creating the server
     signal.signal(signal.SIGINT, signal_handler)  # Ctrl+C
     signal.signal(signal.SIGTERM, signal_handler)  # Termination signal
     
-    httpd = GracefulTCPServer((bind, port), Handler)
+    # Try to create the server with retry for address-in-use errors
+    import time
+    max_retries = 3
+    retry_delay = 1
+    
+    httpd = None
+    for attempt in range(max_retries):
+        try:
+            httpd = GracefulTCPServer((bind, port), Handler)
+            break
+        except OSError as e:
+            if e.errno == 48:  # Address already in use on macOS/Linux
+                if attempt < max_retries - 1:
+                    print(f"Port {port} is in use, retrying in {retry_delay} second(s)... ({attempt + 1}/{max_retries})")
+                    time.sleep(retry_delay)
+                    retry_delay *= 2
+                    continue
+                else:
+                    print(f"\nError: Port {port} is already in use by another process.")
+                    print(f"Try running: lsof -i :{port} to find and kill the process.")
+                    sys.exit(1)
+            else:
+                raise
+    
+    if httpd is None:
+        print("Failed to start server after retries.")
+        sys.exit(1)
     
     try:
         print(f"\n{'='*60}")
