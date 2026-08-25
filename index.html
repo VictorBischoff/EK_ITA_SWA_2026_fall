@@ -7,22 +7,51 @@
     <style>
         /* GitBook-inspired color palette */
         :root {
-            --gitbook-primary: #2196F3;
-            --gitbook-primary-dark: #1976D2;
-            --gitbook-primary-light: #BBDEFB;
-            --gitbook-text: #333333;
-            --gitbook-text-secondary: #666666;
-            --gitbook-text-light: #999999;
-            --gitbook-background: #ffffff;
-            --gitbook-sidebar-bg: #f8f9fa;
-            --gitbook-border: #e0e0e0;
-            --gitbook-code-bg: #f5f5f5;
-            --gitbook-success: #4CAF50;
-            --gitbook-warning: #FF9800;
-            --gitbook-danger: #F44336;
-            
+            /* Obsidian-inspired dark palette */
+            --gitbook-primary: #8875ff;
+            --gitbook-primary-dark: #6f5cd9;
+            --gitbook-primary-light: rgba(136, 117, 255, 0.15);
+            --gitbook-text: #dcddde;
+            --gitbook-text-secondary: #a0a0a0;
+            --gitbook-text-light: #6c6c6c;
+            --gitbook-background: #1e1e1e;
+            --gitbook-sidebar-bg: #181818;
+            --gitbook-border: #2e2e2e;
+            --gitbook-code-bg: #262626;
+            --gitbook-success: #5fb865;
+            --gitbook-warning: #e0a750;
+            --gitbook-danger: #e5534b;
+
             --sidebar-width: 280px;
             --header-height: 60px;
+        }
+
+        html {
+            scrollbar-color: #3a3a3a transparent;
+            scrollbar-width: thin;
+        }
+
+        ::selection {
+            background: rgba(136, 117, 255, 0.3);
+            color: #ffffff;
+        }
+
+        ::-webkit-scrollbar {
+            width: 10px;
+            height: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #3a3a3a;
+            border-radius: 5px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #4a4a4a;
         }
 
         * {
@@ -46,13 +75,13 @@
             left: 0;
             right: 0;
             height: var(--header-height);
-            background: var(--gitbook-background);
+            background: var(--gitbook-sidebar-bg);
             border-bottom: 1px solid var(--gitbook-border);
             display: flex;
             align-items: center;
             padding: 0 24px;
             z-index: 1000;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.4);
         }
 
         .header-content {
@@ -163,15 +192,15 @@
         }
 
         .update-status.success {
-            background: #E8F5E9;
+            background: rgba(95, 184, 101, 0.15);
             border-color: var(--gitbook-success);
-            color: #1B5E20;
+            color: #8fd18f;
         }
 
         .update-status.error {
-            background: #FFEBEE;
+            background: rgba(229, 83, 75, 0.15);
             border-color: var(--gitbook-danger);
-            color: #C62828;
+            color: #ff8f88;
         }
 
         .update-status .icon {
@@ -183,10 +212,11 @@
             bottom: 24px;
             right: 24px;
             padding: 16px 24px;
-            background: var(--gitbook-text);
-            color: white;
+            background: var(--gitbook-code-bg);
+            color: var(--gitbook-text);
+            border: 1px solid var(--gitbook-border);
             border-radius: 6px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
             z-index: 2000;
             animation: slideIn 0.3s ease;
             display: none;
@@ -251,14 +281,18 @@
             border: 1px solid var(--gitbook-border);
             border-radius: 4px;
             font-size: 0.9rem;
-            background: white;
+            background: var(--gitbook-code-bg);
             color: var(--gitbook-text);
+        }
+
+        .sidebar-search input::placeholder {
+            color: var(--gitbook-text-light);
         }
 
         .sidebar-search input:focus {
             outline: none;
             border-color: var(--gitbook-primary);
-            box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.1);
+            box-shadow: 0 0 0 2px rgba(136, 117, 255, 0.15);
         }
 
         .sidebar-nav {
@@ -296,14 +330,15 @@
         }
 
         .nav-link:hover {
-            background: rgba(33, 150, 243, 0.05);
+            background: rgba(136, 117, 255, 0.08);
             color: var(--gitbook-primary);
         }
 
         .nav-link.active {
-            background: var(--gitbook-primary);
-            color: white;
-            font-weight: 500;
+            background: var(--gitbook-primary-light);
+            color: var(--gitbook-primary);
+            font-weight: 600;
+            box-shadow: inset 3px 0 0 var(--gitbook-primary);
         }
 
         .nav-icon {
@@ -321,7 +356,7 @@
         }
 
         .nav-link.active .nav-icon {
-            background: rgba(255,255,255,0.2);
+            background: var(--gitbook-primary);
             color: white;
         }
 
@@ -500,7 +535,8 @@
             height: auto;
             border-radius: 4px;
             margin: 1.2rem 0;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            border: 1px solid var(--gitbook-border);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
         }
 
         .content-body hr {
@@ -519,27 +555,27 @@
         }
 
         .alert-note {
-            background: #E3F2FD;
+            background: rgba(136, 117, 255, 0.12);
             border-color: var(--gitbook-primary);
-            color: #0D47A1;
+            color: #cfc7ff;
         }
 
         .alert-tip {
-            background: #E8F5E9;
+            background: rgba(95, 184, 101, 0.12);
             border-color: var(--gitbook-success);
-            color: #1B5E20;
+            color: #a8e6ab;
         }
 
         .alert-warning {
-            background: #FFF3E0;
+            background: rgba(224, 167, 80, 0.12);
             border-color: var(--gitbook-warning);
-            color: #E65100;
+            color: #f0c78a;
         }
 
         .alert-important {
-            background: #FFEBEE;
+            background: rgba(229, 83, 75, 0.12);
             border-color: var(--gitbook-danger);
-            color: #C62828;
+            color: #ff9d97;
         }
 
         .alert p:first-child {
@@ -587,7 +623,7 @@
 
         .hero .cta-button:hover {
             transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.35);
         }
 
         .course-overview {
@@ -612,7 +648,7 @@
         }
 
         .stat-card {
-            background: white;
+            background: var(--gitbook-code-bg);
             border: 1px solid var(--gitbook-border);
             border-radius: 6px;
             padding: 16px;
@@ -724,7 +760,7 @@
             opacity: 0;
             transition: opacity 0.3s ease, transform 0.3s ease;
             z-index: 1000;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.4);
         }
 
         .scroll-to-top.visible {
