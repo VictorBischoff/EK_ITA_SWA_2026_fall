@@ -792,6 +792,28 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
+        /* Comments (giscus) */
+        .comments-section {
+            margin-top: 3rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--gitbook-border-soft);
+        }
+
+        .comments-title {
+            font-size: 1.4rem;
+            font-weight: 500;
+            color: var(--gitbook-text);
+            margin: 0 0 0.6rem 0;
+            padding-left: 10px;
+            border-left: 2px solid var(--gitbook-primary);
+        }
+
+        .comments-hint {
+            font-size: 0.92rem;
+            color: var(--gitbook-text-secondary);
+            margin: 0 0 1.2rem 0;
+        }
+
         /* Mermaid diagrams */
         .mermaid {
             text-align: center;
@@ -1023,6 +1045,12 @@
                     <p>Loading course content...</p>
                 </div>
             </div>
+
+            <section class="comments-section" id="comments-section" style="display: none;">
+                <h2 class="comments-title">Discussion</h2>
+                <p class="comments-hint">Found an easier way to do something, or something this page doesn't cover? Say so below &mdash; sign in with GitHub to comment.</p>
+                <div id="giscus-container"></div>
+            </section>
         </main>
     </div>
 
@@ -1171,6 +1199,7 @@
                     </ul>
                 </section>
             `;
+            updateGiscus(null);
         }
 
         function loadMarkdown(file) {
@@ -1190,6 +1219,7 @@
             const html = marked.parse(text);
             content.innerHTML = `<div class="session-content">${html}</div>`;
             addCopyButtons();
+            updateGiscus('curriculum');
         }
 
         function loadSessionContent(session) {
@@ -1207,6 +1237,7 @@
             const html = marked.parse(markdown);
             content.innerHTML = `<div class="session-content">${html}</div>`;
             addCopyButtons();
+            updateGiscus(`session-${session.number}`);
             setTimeout(renderMermaidDiagrams, 100);
         }
 
@@ -1259,6 +1290,53 @@
             showResult(ok);
         }
 
+        const GISCUS_CONFIG = {
+            repo: 'VictorBischoff/EK_ITA_SWA_2026_fall',
+            repoId: 'R_kgDOUCqbCw',
+            category: 'Announcements',
+            categoryId: 'DIC_kwDOUCqbC84DEKAX'
+        };
+
+        // Each page maps to its own giscus-backed discussion thread (data-mapping="specific"),
+        // since this is a hash-routed SPA: the pathname never changes between pages, only the
+        // hash, so giscus's default pathname mapping would put every page in one shared thread.
+        function updateGiscus(term) {
+            const section = document.getElementById('comments-section');
+            const container = document.getElementById('giscus-container');
+            if (!section || !container) return;
+
+            if (!term) {
+                section.style.display = 'none';
+                return;
+            }
+            section.style.display = 'block';
+
+            const iframe = container.querySelector('iframe.giscus-frame');
+            if (iframe) {
+                iframe.contentWindow.postMessage({ giscus: { setConfig: { term } } }, 'https://giscus.app');
+                return;
+            }
+
+            container.innerHTML = '';
+            const script = document.createElement('script');
+            script.src = 'https://giscus.app/client.js';
+            script.setAttribute('data-repo', GISCUS_CONFIG.repo);
+            script.setAttribute('data-repo-id', GISCUS_CONFIG.repoId);
+            script.setAttribute('data-category', GISCUS_CONFIG.category);
+            script.setAttribute('data-category-id', GISCUS_CONFIG.categoryId);
+            script.setAttribute('data-mapping', 'specific');
+            script.setAttribute('data-term', term);
+            script.setAttribute('data-strict', '0');
+            script.setAttribute('data-reactions-enabled', '1');
+            script.setAttribute('data-emit-metadata', '0');
+            script.setAttribute('data-input-position', 'top');
+            script.setAttribute('data-theme', 'light');
+            script.setAttribute('data-lang', 'en');
+            script.setAttribute('crossorigin', 'anonymous');
+            script.async = true;
+            container.appendChild(script);
+        }
+
         function renderSessionInfo(session) {
             const content = document.getElementById('content');
             content.innerHTML = `
@@ -1273,6 +1351,7 @@
                     </ul>
                 </div>
             `;
+            updateGiscus(null);
         }
 
         function setupNavigation() {
