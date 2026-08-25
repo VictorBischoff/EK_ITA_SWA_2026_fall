@@ -511,12 +511,57 @@
         }
 
         .content-body pre {
+            position: relative;
             background-color: var(--gitbook-code-bg);
             padding: 16px;
             border-radius: 8px;
             overflow-x: auto;
             margin: 1.2rem 0;
             border: 1px solid var(--gitbook-border-soft);
+        }
+
+        .copy-button {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            padding: 4px 10px;
+            background: var(--gitbook-sidebar-bg);
+            border: 1px solid var(--gitbook-border);
+            border-radius: 6px;
+            color: var(--gitbook-text-secondary);
+            font-family: var(--serif);
+            font-size: 0.75rem;
+            font-weight: 500;
+            line-height: 1.4;
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+        }
+
+        .content-body pre:hover .copy-button,
+        .copy-button:focus-visible {
+            opacity: 1;
+        }
+
+        .copy-button:hover {
+            color: var(--gitbook-primary);
+            border-color: var(--gitbook-primary);
+        }
+
+        .copy-button.copied {
+            color: var(--gitbook-success);
+            border-color: var(--gitbook-success);
+        }
+
+        .copy-button.failed {
+            color: var(--gitbook-danger);
+            border-color: var(--gitbook-danger);
+        }
+
+        @media (hover: none) {
+            .copy-button {
+                opacity: 0.85;
+            }
         }
 
         .content-body pre code {
@@ -909,6 +954,7 @@
             .gitbook-header,
             .gitbook-sidebar,
             .scroll-to-top,
+            .copy-button,
             .gitbook-footer {
                 display: none;
             }
@@ -1143,6 +1189,7 @@
             const content = document.getElementById('content');
             const html = marked.parse(text);
             content.innerHTML = `<div class="session-content">${html}</div>`;
+            addCopyButtons();
         }
 
         function loadSessionContent(session) {
@@ -1159,7 +1206,57 @@
             const content = document.getElementById('content');
             const html = marked.parse(markdown);
             content.innerHTML = `<div class="session-content">${html}</div>`;
+            addCopyButtons();
             setTimeout(renderMermaidDiagrams, 100);
+        }
+
+        function addCopyButtons() {
+            document.querySelectorAll('.content-body pre').forEach(pre => {
+                if (pre.querySelector('.copy-button')) return;
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.className = 'copy-button';
+                button.textContent = 'Copy';
+                button.setAttribute('aria-label', 'Copy code to clipboard');
+                button.addEventListener('click', () => copyCode(pre, button));
+                pre.appendChild(button);
+            });
+        }
+
+        function copyCode(pre, button) {
+            const code = pre.querySelector('code');
+            const text = (code || pre).innerText;
+
+            const showResult = (ok) => {
+                button.textContent = ok ? 'Copied' : 'Failed';
+                button.classList.toggle('copied', ok);
+                button.classList.toggle('failed', !ok);
+                setTimeout(() => {
+                    button.textContent = 'Copy';
+                    button.classList.remove('copied', 'failed');
+                }, 1500);
+            };
+
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(text).then(() => showResult(true)).catch(() => showResult(false));
+                return;
+            }
+
+            // Fallback for browsers/contexts without the Clipboard API
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            textarea.style.position = 'fixed';
+            textarea.style.opacity = '0';
+            document.body.appendChild(textarea);
+            textarea.select();
+            let ok = false;
+            try {
+                ok = document.execCommand('copy');
+            } catch (e) {
+                ok = false;
+            }
+            document.body.removeChild(textarea);
+            showResult(ok);
         }
 
         function renderSessionInfo(session) {
