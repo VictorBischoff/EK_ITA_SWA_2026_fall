@@ -1220,9 +1220,17 @@
             const updateButton = document.getElementById('update-button');
             const updateStatus = document.getElementById('update-status');
             const toast = document.getElementById('toast');
-            
+
             if (!updateButton) return;
-            
+
+            // /api/update is served by server.py, not by static hosts like GitHub
+            // Pages. There's no backend to call there, so don't show a button that
+            // can only ever fail.
+            if (window.location.hostname.endsWith('github.io')) {
+                updateButton.style.display = 'none';
+                return;
+            }
+
             updateButton.addEventListener('click', async () => {
                 updateButton.disabled = true;
                 updateButton.innerHTML = '<span class="icon">&#8635;</span><span>Updating...</span>';
