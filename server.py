@@ -22,9 +22,6 @@ import socketserver
 import argparse
 import os
 import sys
-import subprocess
-import json
-import signal
 from pathlib import Path
 
 # Custom request handler to serve index.html for root path
@@ -73,13 +70,18 @@ class CourseHandler(http.server.SimpleHTTPRequestHandler):
                 return self.do_GET()
             else:
                 self.send_error(404, f"File {self.path} not found")
+
+    def translate_path(self, path):
+        # Fix for paths with query strings or fragments
+        path = path.split('?')[0].split('#')[0]
+        return super().translate_path(path)
     
     def handle_update(self):
-        """Handle the /api/update endpoint to pull from upstream."""
+        """Handle the /api/update endpoint to pull latest changes."""
         repo_dir = Path(__file__).parent
         
         try:
-            # Step 1: Get current branch
+            # Get current branch
             current_branch = subprocess.run(
                 ['git', 'rev-parse', '--abbrev-ref', 'HEAD'],
                 cwd=repo_dir,
@@ -87,131 +89,80 @@ class CourseHandler(http.server.SimpleHTTPRequestHandler):
                 text=True
             )
             
-            # Step 2: Stash any local changes
-            stash_result = subprocess.run(
-                ['git', 'stash', 'push', '-m', 'Auto-stash before upstream update'],
+            if current_branch.returncode != 0:
+                raise Exception(f"Not in a git repository")
+            
+            current_branch_name = current_branch.stdout.strip()
+            
+            # Check if upstream remote exists
+            remotes = subprocess.run(
+                ['git', 'remote'],
                 cwd=repo_dir,
                 capture_output=True,
                 text=True
             )
-            stashed = stash_result.returncode == 0
             
-            # Step 3: Fetch from upstream
-            fetch_result = subprocess.run(
-                ['git', 'fetch', 'upstream'],
-                cwd=repo_dir,
-                capture_output=True,
-                text=True
-            )
+            upstream_exists = remotes.returncode == 0 and 'upstream' in remotes.stdout
             
-            if fetch_result.returncode != 0:
-                response = {
-                    'success': False,
-                    'message': 'Failed to fetch from upstream',
-                    'error': fetch_result.stderr or fetch_result.stdout,
-                    'step': 'fetch'
-                }
-                self.send_response(500)
-                self._send_json(response)
-                return
-            
-            # Step 4: Checkout master if not already there
-            if current_branch.stdout.strip() != 'master':
-                checkout_result = subprocess.run(
-                    ['git', 'checkout', 'master'],
+            if upstream_exists:
+                # Fetch from upstream
+                fetch_result = subprocess.run(
+                    ['git', 'fetch', 'upstream'],
                     cwd=repo_dir,
                     capture_output=True,
                     text=True
                 )
-                if checkout_result.returncode != 0:
-                    response = {
-                        'success': False,
-                        'message': 'Failed to checkout master branch',
-                        'error': checkout_result.stderr or checkout_result.stdout,
-                        'step': 'checkout'
-                    }
-                    self.send_response(500)
-                    self._send_json(response)
-                    return
-            
-            # Step 5: Merge from upstream/master
-            merge_result = subprocess.run(
-                ['git', 'merge', 'upstream/master', '--no-edit', '-m', 'Auto-merge upstream changes'],
-                cwd=repo_dir,
-                capture_output=True,
-                text=True
-            )
-            
-            if merge_result.returncode != 0:
-                response = {
-                    'success': False,
-                    'message': 'Failed to merge upstream changes',
-                    'error': merge_result.stderr or merge_result.stdout,
-                    'step': 'merge'
-                }
-                self.send_response(500)
-                self._send_json(response)
-                return
-            
-            # Step 6: Try to push to origin (may fail if no push permissions)
-            push_result = subprocess.run(
-                ['git', 'push', 'origin', 'master'],
-                cwd=repo_dir,
-                capture_output=True,
-                text=True
-            )
-            
-            # Reapply stashed changes
-            if stashed:
-                subprocess.run(
-                    ['git', 'stash', 'pop'],
+                
+                if fetch_result.returncode != 0:
+                    raise Exception(f"Failed to fetch from upstream: {fetch_result.stderr.strip()}")
+                
+                # Checkout master if not already there
+                if current_branch_name != 'master':
+                    checkout_result = subprocess.run(
+                        ['git', 'checkout', 'master'],
+                        cwd=repo_dir,
+                        capture_output=True,
+                        text=True
+                    )
+                    if checkout_result.returncode != 0:
+                        raise Exception(f"Failed to checkout master: {checkout_result.stderr.strip()}")
+                
+                # Merge from upstream/master
+                merge_result = subprocess.run(
+                    ['git', 'merge', 'upstream/master', '--no-edit'],
                     cwd=repo_dir,
                     capture_output=True,
                     text=True
                 )
+                
+                if merge_result.returncode != 0:
+                    raise Exception(f"Failed to merge upstream/master: {merge_result.stderr.strip()}")
+                
+                message = 'Successfully updated from upstream'
+            else:
+                # No upstream configured - cannot update from source repo
+                # Just return a message
+                message = 'No upstream remote configured. To set it up, run: git remote add upstream <original-repo-url>'
+                raise Exception(message)
             
-            # Return to original branch if not master
-            if current_branch.stdout.strip() != 'master':
-                subprocess.run(
-                    ['git', 'checkout', current_branch.stdout.strip()],
-                    cwd=repo_dir,
-                    capture_output=True,
-                    text=True
-                )
-            
-            # Prepare successful response
             response = {
                 'success': True,
-                'message': 'Successfully updated from upstream',
-                'fetch': fetch_result.stdout.strip(),
-                'merge': merge_result.stdout.strip(),
-                'push': push_result.stdout.strip() if push_result.returncode == 0 else 'Push failed (may need permissions)',
-                'stashed': stashed
+                'message': message,
+                'upstream': upstream_exists
             }
             self.send_response(200)
             
         except Exception as e:
             response = {
                 'success': False,
-                'message': 'Internal server error',
-                'error': str(e),
-                'step': 'exception'
+                'message': str(e)
             }
             self.send_response(500)
         
-        self._send_json(response)
-    
-    def _send_json(self, data):
-        """Helper to send JSON response."""
         self.send_header('Content-type', 'application/json; charset=utf-8')
         self.send_header('Access-Control-Allow-Origin', '*')
         self.end_headers()
-        self.wfile.write(json.dumps(data, indent=2).encode('utf-8'))
-
-    def translate_path(self, path):
-        # Fix for paths with query strings or fragments
-        path = path.split('?')[0].split('#')[0]
-        return super().translate_path(path)
+        self.wfile.write(json.dumps(response, indent=2).encode('utf-8'))
     
     def end_headers(self):
         # Add CORS headers for all responses
@@ -221,79 +172,11 @@ class CourseHandler(http.server.SimpleHTTPRequestHandler):
         super().end_headers()
 
 
-class GracefulTCPServer(socketserver.TCPServer):
-    """TCPServer that handles SIGTERM for graceful shutdown."""
-    allow_reuse_address = True
-    
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self._shutdown_request = False
-    
-    def serve_forever(self, poll_interval=0.5):
-        """Handle one request at a time until shutdown."""
-        self._shutdown_request = False
-        try:
-            while not self._shutdown_request:
-                self.handle_request()
-        finally:
-            self.server_close()
-    
-    def shutdown(self):
-        """Stop the serve_forever loop."""
-        self._shutdown_request = True
-        # Send a dummy request to unblock the server
-        try:
-            import socket
-            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            s.connect((self.server_address[0], self.server_address[1]))
-            s.close()
-        except:
-            pass
-
-
-def signal_handler(signum, frame):
-    """Handle termination signals gracefully."""
-    print(f"\n\nReceived signal {signum}, shutting down server...")
-    sys.exit(0)
-
-
 def run_server(port=8000, bind='0.0.0.0'):
-    """Start the HTTP server with graceful shutdown handling."""
+    """Start the HTTP server."""
     Handler = CourseHandler
     
-    # Register signal handlers for graceful shutdown BEFORE creating the server
-    signal.signal(signal.SIGINT, signal_handler)  # Ctrl+C
-    signal.signal(signal.SIGTERM, signal_handler)  # Termination signal
-    
-    # Try to create the server with retry for address-in-use errors
-    import time
-    max_retries = 3
-    retry_delay = 1
-    
-    httpd = None
-    for attempt in range(max_retries):
-        try:
-            httpd = GracefulTCPServer((bind, port), Handler)
-            break
-        except OSError as e:
-            if e.errno == 48:  # Address already in use on macOS/Linux
-                if attempt < max_retries - 1:
-                    print(f"Port {port} is in use, retrying in {retry_delay} second(s)... ({attempt + 1}/{max_retries})")
-                    time.sleep(retry_delay)
-                    retry_delay *= 2
-                    continue
-                else:
-                    print(f"\nError: Port {port} is already in use by another process.")
-                    print(f"Try running: lsof -i :{port} to find and kill the process.")
-                    sys.exit(1)
-            else:
-                raise
-    
-    if httpd is None:
-        print("Failed to start server after retries.")
-        sys.exit(1)
-    
-    try:
+    with socketserver.TCPServer((bind, port), Handler) as httpd:
         print(f"\n{'='*60}")
         print(f"  Software Architecture Course Server")
         print(f"{'='*60}")
@@ -306,13 +189,11 @@ def run_server(port=8000, bind='0.0.0.0'):
         print(f"  Press Ctrl+C to stop the server")
         print(f"{'='*60}\n")
         
-        httpd.serve_forever()
-    except KeyboardInterrupt:
-        print("\n\nServer stopped by user.")
-    finally:
-        httpd.server_close()
-        print("Server socket closed.")
-        sys.exit(0)
+        try:
+            httpd.serve_forever()
+        except KeyboardInterrupt:
+            print("\n\nServer stopped.")
+            sys.exit(0)
 
 
 if __name__ == '__main__':
