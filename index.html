@@ -219,12 +219,16 @@
             position: fixed;
             bottom: 24px;
             right: 24px;
+            left: 24px;
+            max-width: 420px;
+            margin-left: auto;
             padding: 16px 24px;
             background: var(--gitbook-sidebar-bg);
             color: var(--gitbook-text);
             border: 1px solid var(--gitbook-border-soft);
             border-radius: 8px;
             box-shadow: 0 4px 24px rgba(20, 19, 19, 0.08);
+            overflow-wrap: break-word;
             z-index: 2000;
             animation: slideIn 0.3s ease;
             display: none;
@@ -355,16 +359,19 @@
         }
 
         .nav-icon {
-            width: 20px;
+            min-width: 20px;
             height: 20px;
+            padding: 0 4px;
             display: flex;
             align-items: center;
             justify-content: center;
             background: var(--gitbook-primary-light);
             color: var(--gitbook-primary);
             border-radius: 4px;
-            font-size: 11px;
+            font-size: 10px;
             font-weight: 600;
+            font-variant-numeric: tabular-nums;
+            white-space: nowrap;
             flex-shrink: 0;
         }
 
@@ -508,6 +515,7 @@
             font-family: var(--mono);
             font-size: 0.88rem;
             color: var(--gitbook-text);
+            overflow-wrap: break-word;
         }
 
         .content-body pre {
@@ -573,7 +581,9 @@
         }
 
         .content-body table {
+            display: block;
             width: 100%;
+            overflow-x: auto;
             border-collapse: collapse;
             margin: 1.2rem 0;
         }
