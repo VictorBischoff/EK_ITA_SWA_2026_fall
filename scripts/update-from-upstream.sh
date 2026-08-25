@@ -11,7 +11,7 @@ cd "$REPO_DIR"
 
 # Ensure upstream remote exists
 if ! git remote | grep -q "^upstream$"; then
-    git remote add upstream https://github.com/ClausBove/EK_ITA_SWA_2026_fall.git
+    git remote add upstream https://github.com/Ek-Ita-Swa-Iti/EK_ITA_SWA_2026_fall.git
 fi
 
 # Stash any local changes

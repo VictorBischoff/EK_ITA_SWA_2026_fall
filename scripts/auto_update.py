@@ -21,7 +21,7 @@ import os
 from pathlib import Path
 
 REPO_DIR = Path(__file__).parent.parent
-UPSTREAM_URL = "https://github.com/ClausBove/EK_ITA_SWA_2026_fall.git"
+UPSTREAM_URL = "https://github.com/Ek-Ita-Swa-Iti/EK_ITA_SWA_2026_fall.git"
 
 
 def run(cmd, check=True, capture_output=True):

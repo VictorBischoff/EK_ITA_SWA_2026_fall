@@ -6,7 +6,7 @@ This directory contains scripts to help maintain this forked repository.
 
 The upstream remote has been configured to point to:
 ```
-https://github.com/ClausBove/EK_ITA_SWA_2026_fall.git
+https://github.com/Ek-Ita-Swa-Iti/EK_ITA_SWA_2026_fall.git
 ```
 
 You can verify this with:
@@ -107,5 +107,5 @@ git push origin master
 If the upstream repository URL changes:
 
 ```bash
-git remote set-url upstream https://github.com/ClausBove/EK_ITA_SWA_2026_fall.git
+git remote set-url upstream https://github.com/Ek-Ita-Swa-Iti/EK_ITA_SWA_2026_fall.git
 ```
