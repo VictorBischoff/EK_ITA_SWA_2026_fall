@@ -24,32 +24,58 @@
 
 ## Today's Teachings
 
-> **Everything today runs *inside the webtop container* from Session 2, not on your laptop** — same terminal, same machine. `curl`, the text tools, and `openssl` all live in the container; `localhost` means the container. If you open a fresh laptop terminal by mistake, the commands may be missing or behave differently.
+> Today everything runs **inside the webtop container (Docker container)** from Session 2, not "on" your laptop.
 
 ### Part 0 — Warm-up (10 min)
-Quick recap of last week's navigation, then `cd` into a seeded `session-03/` folder with a sample **log file** and a **CSV**.
+Quick recap of last week's navigation. Then pull down today's data — a real-ish web-server **access log** (~300 lines) and a small **CSV** — into a fresh folder:
+
+```bash
+mkdir -p ~/session-03 && cd ~/session-03
+base=https://raw.githubusercontent.com/Ek-Ita-Swa-Iti/EK_ITA_SWA_2026_fall/master/03._bash_and_http/session-03
+curl -sO "$base/access.log" -O "$base/data.csv"
+ls -l                 # access.log, data.csv
+head -3 access.log    # IP - - [date:time] "METHOD path" status
+```
+
+Every command below works on these two files. One log line looks like:
+
+```
+203.0.113.7 - - [10/Oct/2026:13:40:37] "POST /api/checkout" 503
+```
+
+— the fields are space-separated, so the client IP is `cut -d' ' -f1` and the timestamp is field 4.
 
 ### Part 1 — Streams, pipes & redirection (30 min) — blackboard + keyboard
-On the board: every program has three streams — **stdin**, **stdout**, **stderr**. The two moves that change everything:
+Every program has three streams — **stdin** (input), **stdout** (normal output), **stderr** (error messages).
 
-- **Pipe** `|` — feed one command's output into the next: `cat access.log | wc -l`.
-- **Redirect** `>` (overwrite), `>>` (append), `<` (from file): `ls > files.txt`.
+Try it with `cat`:
+
+```bash
+cat data.csv    # a filename → cat reads the file; contents go to stdout
+cat             # no filename → cat reads stdin (type a line, Enter; Ctrl+D to stop)
+cat nope        # can't open it → "cat: nope: No such file or directory" to stderr
+```
+
+Both land on your screen by default, so they look the same — but they're *separate* channels. That separation is what lets you capture or send one somewhere without the other. Two ways to do that:
+
+- **Pipe** `|` — feed one command's stdout into the next command's stdin: `cat access.log | wc -l`.
+- **Redirect** `>` (overwrite), `>>` (append), `<` (read from a file): `ls > files.txt` writes the listing into a file instead of the screen.
 
 The Unix philosophy: don't hunt for one big command — *chain small ones*.
 
 ### Part 2 — The text toolkit (40 min) — keyboard
-Each tool, used immediately on the sample log:
+Use each tool, on the sample log file:
 
 - `grep` (find lines), `wc -l` (count), `sort` / `sort -n`, `uniq -c` (count duplicates).
 - `cut -d',' -f1` (a CSV column), `find` (locate files), a taste of `sed 's/old/new/'` and `awk '{print $1}'`.
 
-**Live set-piece — "the 5 busiest IPs":** build it one stage at a time, re-running as it grows:
+**"The 5 busiest IPs":** build it one stage at a time, re-running as it grows:
 
 ```bash
 cut -d' ' -f1 access.log | sort | uniq -c | sort -rn | head -5
 ```
 
-Plus a 5-min note on **exit codes** (`echo $?`), env vars (`echo $HOME`, `export`), and `PATH`.
+**Exit codes** (`echo $?`), env vars (`echo $HOME`, `export`), and `PATH`.
 
 ### Part 3 — Talking to the web with curl + HTTP (35 min) — keyboard
 `curl` fetches URLs. Just enough HTTP to use it:
