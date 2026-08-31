@@ -29,14 +29,24 @@
 Last week you ran `curl https://api.github.com/...` and got JSON back. Ask the room: *between pressing Enter and the reply arriving, what actually happened?* Collect guesses on the board. Today we fill in the blanks.
 
 ### Part 1 — The client–server model & a request's journey (30 min) — blackboard
-Draw the round-trip once, end to end:
+Walk the round-trip once, end to end.
 
-- A **client** wants something from a **server**; they exchange messages over a network.
-- **Name → address:** `api.github.com` isn't a place — **DNS** turns the name into an **IP address**.
-- **Address → port:** an IP reaches a *machine*; the **port** picks the *program* on it (`:443` = HTTPS, `:80` = HTTP, `:22` = SSH).
-- **Process → response:** a program is **listening** on that port, handles the request, and sends a reply back down the same connection.
+**The shape.** A **client** wants something from a **server**; they exchange messages over a network.
 
-The mental model for the whole semester: an architecture is boxes (processes) connected by these request/response wires.
+![Clients — a laptop, a phone, a desktop — all send requests through the Internet to a single server, which sends responses back.](img/client-server-model.webp)
+
+Every client (a browser, a phone app, another service) sends a **request** and gets a **response** back. "The Internet" in the middle stands for all the network hops the message actually crosses. That is the mental model for the rest of the semester: **an architecture is boxes (processes) connected by these request/response wires.**
+
+**The journey.** How does one request actually get there and back? Four steps:
+
+![A user asks a DNS server for a domain's address; the DNS server replies with the web server's IP; the user then makes an HTTP request to that IP, and the web server responds with the data.](img/request-journey-dns.png)
+
+1. **Name → address.** `api.github.com` isn't a place. The client asks a **DNS server**: *what's the IP for this name?*
+2. The DNS server **replies with the IP address** of the machine you actually want.
+3. **Address → port → process.** The client now makes its **HTTP request straight to that IP**, on a **port** (`:443` = HTTPS, `:80` = HTTP, `:22` = SSH). An IP reaches a *machine*; the port picks the *program* on it.
+4. A program is **listening** on that port, handles the request, and the server **responds with the data** — back down the same connection.
+
+*(The second diagram's labels are informal — "Respond IP of Web Server", "Data Files" — but the order is exactly right: resolve the name first, then talk to the address.)*
 
 ### Part 2 — Ports & listening processes (35 min) — keyboard, the set-piece
 
@@ -72,8 +82,19 @@ getent hosts localhost             # /etc/hosts maps names locally
 Real systems rarely expose the app directly. On the board:
 
 - A **reverse proxy** is one public address that forwards requests to one or more backend processes.
-- It's where you do **TLS termination** (callback to S3's HTTPS), routing, and **load balancing** — spreading traffic across several identical backends so one machine isn't a bottleneck or a single point of failure.
+- It's where you do **TLS termination** (HTTPS is decrypted here), routing, and **load balancing** — spreading traffic across several identical backends so one machine isn't a bottleneck or a single point of failure.
 - One line of why it matters architecturally: it's a **boundary** — callers depend on the front address, not on how many services hide behind it (forward link to microservices, S19, and its gateway).
+
+```mermaid
+flowchart LR
+    C1["Client"] --> RP
+    C2["Client"] --> RP
+    C3["Client"] --> RP
+    RP{{"Reverse proxy<br/>one public address :443<br/>TLS termination, routing, load balancing"}}
+    RP --> B1["backend :8001"]
+    RP --> B2["backend :8002"]
+    RP --> B3["backend :8003"]
+```
 
 Optional demo: a tiny nginx (or `python` twice on two ports) with the proxy sending `/a` and `/b` to different backends.
 
@@ -89,10 +110,30 @@ curl --max-time 3 https://httpbin.org/delay/10   # too slow → timeout
 ```
 
 - **Failure modes:** connection refused (no one home), timeout (too slow / lost), and the nasty one — **partial failure** (the request arrived and did its work, but the *reply* was lost, so the caller can't tell).
+
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant S as Server
+    C->>S: POST /charge (a payment)
+    Note over S: the server does the work —<br/>the card is charged
+    S--xC: reply lost on the way back
+    Note over C: no response before the timeout.<br/>did it work? can't tell.<br/>retry and risk charging twice?
+```
+
 - **The punchline:** a network call is *not* a function call. This single fact drives retries, timeouts, idempotency, and every hard trade-off in the distributed half of this course. **Session 18 (events)** and **Session 19 (microservices)** are, in large part, about living with this.
 
 ### Part 7 — Wrap-up (10 min)
 The cheat-sheet: name → address → port → process → response, with a proxy possibly in front, over a network that can drop any of it. Commit today's notes/commands.
+
+```mermaid
+flowchart LR
+    C["Client"] -->|"name to IP (DNS)"| RP["Reverse proxy<br/>(maybe in front)"]
+    RP -->|"then port, then process"| S["Server process"]
+    S -->|"response"| C
+```
+
+Every arrow can be slow (**latency**), **refused** (nothing listening), or silently **dropped** (partial failure) — that's the whole distributed half of the course in one picture.
 
 ---
 
