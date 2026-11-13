@@ -28,14 +28,13 @@ Efter i dag kan du:
 ## Før timen
 
 - Hav jeres **notes-service** klar og kørende (`docker compose up`).
+  - Virker jeres ikke, eller vil I starte forfra, så brug [`example-node`](example-node/README.md) i denne mappe. Det er notes-servicen med semantisk søgning fra session 19. Kopiér den ind i jeres repo, og kør den derfra.
 - Hav **Insomnia** klar.
 - Find jeres **GitHub-token** fra session 10 (eller lav et nyt med læseadgang: `public_repo`, `read:user`).
 
 ---
 
 ## Del 1: Jagt på *secrets*
-
-Alene, på jeres egen computer. **Vis ikke jeres skærm til andre i denne del.**
 
 Find de *secrets*, I har brugt i semestret, og skriv ned, *hvor* de ligger, og *hvem* der kan læse dem:
 
@@ -49,7 +48,7 @@ Find de *secrets*, I har brugt i semestret, og skriv ned, *hvor* de ligger, og *
 
 Kommandoerne til Mac og Windows viser kun, *at* der ligger en nøgle, og ikke selve nøglen. Finder I ikke noget dér, så kig i `~/.vibe/.env`. Ældre versioner af Vibe gemte nøglen i den fil.
 
-Spørgsmål til bagefter, i par:
+Spørgsmål til bagefter:
 
 - Hvilke af jeres *secrets* ligger som **almindelig tekst** i en fil?
 - Ligger nogen af dem på **GitHub**?
@@ -82,26 +81,35 @@ Hvorfor gav vi tokenet i session 10 kun læseadgang? Det kaldes **least privileg
 
 ## Del 3: Øvelse · Giv notes-service en nøgle
 
-I par, i jeres notes-service.
+I jeres notes-service.
 
 ### 3a · *Secrets* ud af compose-filen
 
-Står der et password direkte i `docker-compose.yml` (fx `POSTGRES_PASSWORD: postgres`)? Flyt det ud:
+Står der et password direkte i `docker-compose.yml`? I `example-node` står MongoDB-passwordet `notes123` to steder: hos `mongo` og i backends `MONGO_URL`. Flyt det ud:
 
 1. Lav en fil `.env` ved siden af `docker-compose.yml`:
 
    ```
-   POSTGRES_PASSWORD=et-langt-password
+   MONGO_PASSWORD=et-langt-password
    NOTES_API_TOKEN=et-langt-tilfældigt-token
    ```
 
-   Brug fx `openssl rand -hex 32` til at lave et tilfældigt token.
+   Brug fx `openssl rand -hex 32` til at lave et tilfældigt password og token. Hex er kun bogstaver og tal, så det kan stå i en URL uden problemer.
 2. I `docker-compose.yml` henter I værdierne fra `.env`:
 
    ```yaml
+     backend:
        environment:
-         POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+         MONGO_URL: mongodb://notes:${MONGO_PASSWORD}@mongo:27017
+         NOTES_API_TOKEN: ${NOTES_API_TOKEN}
+
+     mongo:
+       environment:
+         MONGO_INITDB_ROOT_USERNAME: notes
+         MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD}
    ```
+
+   MongoDB sætter kun passwordet, første gang containeren starter med en tom database. Kør `docker compose down` og så `docker compose up -d`, så `mongo` starter forfra med det nye password.
 
 3. Tilføj `.env` til `.gitignore`. Lav en `.env.example` med navnene, men uden værdier, og commit den i stedet.
 4. Tjek med `git status`, at `.env` **ikke** kommer med.
@@ -114,6 +122,40 @@ Prøv `docker compose config`. Hvad viser den? Hvad betyder det, at en *secret* 
 - `POST`, `PUT` og `DELETE` kræver headeren `Authorization: Bearer <token>`. Mangler den, eller er den forkert, svarer API'et `401`.
 - Backend læser tokenet fra miljøvariablen `NOTES_API_TOKEN` (`process.env.NOTES_API_TOKEN`), ikke fra koden. Send den videre fra `.env` i `docker-compose.yml`.
 - Tilføj et `securitySchemes`-afsnit med bearer-token i jeres `swagger.json` fra session 12, så kontrakten fortæller klienten, at der kræves et token.
+
+  ```json
+  {
+    "openapi": "3.0.3",
+    "components": {
+      "securitySchemes": {
+        "bearerAuth": {
+          "type": "http",
+          "scheme": "bearer"
+        }
+      }
+    },
+    "paths": {
+      "/v1/notes/{id}": {
+        "get": {
+          "summary": "Hent én note (åben for alle)",
+          "responses": {
+            "200": { "description": "Noten" }
+          }
+        },
+        "delete": {
+          "summary": "Slet en note",
+          "security": [{ "bearerAuth": [] }],
+          "responses": {
+            "204": { "description": "Noten er slettet" },
+            "401": { "description": "Mangler eller forkert token" }
+          }
+        }
+      }
+    }
+  }
+  ```
+
+  `securitySchemes` beskriver, *hvordan* klienten sender tokenet. `security` på den enkelte operation siger, *hvor* det kræves. `GET` har ingen `security` og er derfor åben. I Swagger UI dukker der nu en **Authorize**-knap op, hvor I kan indsætte tokenet.
 
 **Færdig betyder:** I Insomnia giver `DELETE /v1/notes/1` uden token `401`, og med token virker det.
 
@@ -135,7 +177,7 @@ Jeres frontend skal også kunne oprette noter. Hvis I lægger tokenet i `app.js`
 2. Fjern linjen i en ny commit, og push igen.
 3. Kør `git log -p`. Er tokenet væk?
 
-I par: Sæt de her skridt i den rigtige rækkefølge, og begrund:
+Sæt de her skridt i den rigtige rækkefølge, og begrund:
 
 - Fjern tokenet fra Git-historikken
 - **Tilbagekald tokenet**, og lav et nyt
