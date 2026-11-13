@@ -18,7 +18,7 @@
 
 Efter i dag kan du:
 
-- skelne mellem **autentificering** (*hvem er du?*) og **autorisation** (*hvad må du?*), og se forskellen på `401` og `403`
+- skelne mellem **authentication** (*hvem er du?*) og **authorization** (*hvad må du?*), og se forskellen på `401` og `403`
 - forklare, hvad et **token** er, og hvorfor det har **scopes** og en **udløbsdato**
 - placere en *secret* rigtigt: i en miljøvariabel eller en `.env`-fil, der ikke kommer i Git, og aldrig i kode, images eller frontend
 - handle rigtigt, når en *secret* er lækket: **tilbagekald den først**, ryd op bagefter
@@ -38,15 +38,17 @@ Efter i dag kan du:
 
 Find de *secrets*, I har brugt i semestret, og skriv ned, *hvor* de ligger, og *hvem* der kan læse dem:
 
-| Hvor I brugte den | Hvor den sandsynligvis ligger | Prøv |
-|-------------------|-------------------------------|------|
-| Mistral Vibe-nøglen, session 1 | I styresystemets **nøglering** | **Mac:** `security find-generic-password -s ai.mistral.vibe`<br>**Windows:** Åbn **Legitimationsstyring** (Credential Manager) → *Windows-legitimationsoplysninger* |
-| GitHub-token til `git push` fra jeres laptop, session 5 og frem | I **nøgleringen**. Git gemmer det selv der | `git config credential.helper` viser hvordan.<br>**Mac:** `security find-internet-password -s github.com`<br>**Windows:** Legitimationsstyring, find `git:https://github.com` |
-| GitHub-token til `git push` i webtop, session 2 | Som **almindelig tekst** i `~/.git-credentials` i webtop-containeren, fordi I kørte `credential.helper store` | `cat ~/.git-credentials` (i webtop) |
-| `export TOKEN=…` og `export GH_TOKEN=…`, session 3 og 10 | I jeres **shell-historik** | `history \| grep TOKEN` |
-| Databasepasswordet i jeres notes-service, session 9 (`DB_PASSWORD` og `MYSQL_ROOT_PASSWORD`). Det samme gælder session 6 og 18 | I jeres **`docker-compose.yml`** | Kig i filen. I lagde notes-service på GitHub i session 11. Ligger passwordet der nu? |
+| Hvor I brugte den | Hvor den sandsynligvis ligger | Prøv | Sådan sletter I den |
+|-------------------|-------------------------------|------|---------------------|
+| Mistral Vibe-nøglen, session 1 | I styresystemets **nøglering** | **Mac:** `security find-generic-password -s ai.mistral.vibe`<br>**Windows:** Åbn **Legitimationsstyring** (Credential Manager) → *Windows-legitimationsoplysninger* | **Mac:** `security delete-generic-password -s ai.mistral.vibe`<br>**Windows:** Legitimationsstyring → vælg nøglen → **Fjern**<br>Slet også linjen i `~/.vibe/.env`, hvis den findes.<br>**Tilbagekald:** <https://console.mistral.ai> → *API Keys* → slet nøglen |
+| GitHub-token til `git push` fra jeres laptop, session 5 og frem | I **nøgleringen**. Git gemmer det selv der | `git config credential.helper` viser hvordan.<br>**Mac:** `security find-internet-password -s github.com`<br>**Windows:** Legitimationsstyring, find `git:https://github.com` | **Mac:** `security delete-internet-password -s github.com`<br>**Windows:** Legitimationsstyring → `git:https://github.com` → **Fjern**<br>**Tilbagekald:** GitHub → *Settings* → *Developer settings* → *Personal access tokens* → **Delete** |
+| GitHub-token til `git push` i webtop, session 2 | Som **almindelig tekst** i `~/.git-credentials` i webtop-containeren, fordi I kørte `credential.helper store` | `cat ~/.git-credentials` (i webtop) | `rm ~/.git-credentials`<br>`git config --global --unset credential.helper`<br>**Tilbagekald** tokenet på GitHub som ovenfor |
+| `export TOKEN=…` og `export GH_TOKEN=…`, session 3 og 10 | I jeres **shell-historik** | `history \| grep TOKEN` | `history -d <nummer>` for hver linje (start med det højeste nummer), så `history -w`<br>Eller ryd det hele: `history -c && history -w`<br>**Mac (zsh):** Ret i `~/.zsh_history` i en editor<br>`unset TOKEN GH_TOKEN` fjerner dem fra den åbne terminal |
+| Databasepasswordet i jeres notes-service, session 9 (`DB_PASSWORD` og `MYSQL_ROOT_PASSWORD`). Det samme gælder session 6 og 18 | I jeres **`docker-compose.yml`** | Kig i filen. I lagde notes-service på GitHub i session 11. Ligger passwordet der nu? | Flyt det ud i en `.env`-fil (Del 3a), og **skift passwordet**. Ligger det på GitHub, er det i historikken, selvom I sletter det i en ny commit (Del 4) |
 
 Kommandoerne til Mac og Windows viser kun, *at* der ligger en nøgle, og ikke selve nøglen. Finder I ikke noget dér, så kig i `~/.vibe/.env`. Ældre versioner af Vibe gemte nøglen i den fil.
+
+At slette en *secret* på jeres egen computer gør den ikke ugyldig. Har en anden fået fat i den, virker den stadig. Det er kun **tilbagekald** hos udbyderen (Mistral, GitHub), der gør den ubrugelig. Mere om det i [Del 4](#del-4-lækket).
 
 Spørgsmål til bagefter:
 
@@ -64,12 +66,12 @@ Demo og øvelse i Insomnia mod GitHubs API, som I kender fra session 3 og 10.
 2. Samme request **med** jeres læse-token fra session 10 (`Authorization: Bearer …`). Hvilken statuskode nu?
 3. `GET https://api.github.com/user` med det samme token. Virker det?
 
-Forklar forskellen:
+Forskellen på authentication og authorization:
 
-- **Autentificering:** GitHub ved ikke, hvem I er → `401 Unauthorized`.
-- **Autorisation:** GitHub ved godt, hvem I er, men tokenet må ikke det, I beder om. Hvilken kode fik I? Står der noget om scopes i headers (`x-oauth-scopes`, `x-accepted-oauth-scopes`)?
+- **Authentication:** GitHub ved ikke, hvem I er → `401 Unauthorized`.
+- **Authorization:** GitHub ved godt, hvem I er, men tokenet må ikke det, I beder om. Hvilken kode fik I? Står der noget om scopes i headers (`x-oauth-scopes`, `x-accepted-oauth-scopes`)?
 
-Et token er et **adgangskort**, ikke en identitet. Det har:
+Et token viser, hvem I er (authentication), men det er først og fremmest et **adgangskort** (authorization): Det må kun det, dets scopes tillader. Det har:
 
 - **scopes**: hvad det må (læse, skrive, slette)
 - **en udløbsdato**: hvor længe det virker
@@ -165,6 +167,92 @@ Jeres frontend skal også kunne oprette noter. Hvis I lægger tokenet i `app.js`
 
 **Frontend kan ikke holde på en _secret_.** Alt, hvad der sendes til browseren, kan brugeren læse. Hvad skulle der til i stedet? (Tænk på, hvordan I logger ind på GitHub.)
 
+<details>
+<summary><strong>Løsning:</strong> Login med en session-cookie</summary>
+
+<br>
+
+Browseren skal ikke have en fælles *secret*. I stedet logger **brugeren** ind, og backend giver hver bruger sin egen session, som kan udløbe og slettes.
+
+1. Frontend sender brugernavn og password til `POST /v1/login`.
+2. Backend tjekker passwordet mod en **hash** i MongoDB. Passwordet selv bliver aldrig gemt.
+3. Er det rigtigt, laver backend et tilfældigt session-id, husker hvem det hører til, og sender det tilbage som en cookie:
+
+   ```
+   Set-Cookie: session=4f9c…; HttpOnly; Secure; SameSite=Strict; Max-Age=3600
+   ```
+
+   | Flag | Hvad det gør |
+   |---|---|
+   | `HttpOnly` | JavaScript kan ikke læse cookien. Den står ikke i `app.js` og kan ikke stjæles af et script |
+   | `Secure` | Cookien sendes kun over HTTPS (browsere tillader `localhost` uden HTTPS) |
+   | `SameSite=Strict` | Cookien sendes ikke med, når en anden hjemmeside laver requests til jeres API |
+   | `Max-Age=3600` | Sessionen udløber efter en time |
+
+4. Browseren sender cookien med automatisk. Ved `POST`, `PUT` og `DELETE` slår backend session-id'et op: Hvem er brugeren (authentication), og må brugeren det her (authorization)? Ellers `401`.
+5. `POST /v1/logout` sletter sessionen i backend.
+
+**Backend** (Node har det hele indbygget i `crypto`, så der er ingen nye npm-pakker):
+
+```js
+const crypto = require("crypto");
+
+// Gem aldrig passwordet, kun salt + hash. Det her kører, når en bruger oprettes.
+function hashPassword(password) {
+  const salt = crypto.randomBytes(16).toString("hex");
+  const hash = crypto.scryptSync(password, salt, 64).toString("hex");
+  return `${salt}:${hash}`;
+}
+
+function checkPassword(password, stored) {
+  const [salt, hash] = stored.split(":");
+  const candidate = crypto.scryptSync(password, salt, 64);
+  return crypto.timingSafeEqual(candidate, Buffer.from(hash, "hex"));
+}
+
+const sessions = new Map(); // session-id → { username, expires }
+
+function createSession(username) {
+  const id = crypto.randomBytes(32).toString("hex");
+  sessions.set(id, { username, expires: Date.now() + 60 * 60 * 1000 });
+  return id;
+}
+
+function userFromRequest(req) {
+  const match = (req.headers.cookie || "").match(/(?:^|;\s*)session=([a-f0-9]+)/);
+  const session = match && sessions.get(match[1]);
+  if (!session || session.expires < Date.now()) return null;
+  return session.username;
+}
+```
+
+**Frontend og backend ligger på hver sin origin** (`localhost:8080` og `localhost:3000`), så browseren sender kun cookien med, hvis begge sider siger ja:
+
+```js
+// app.js
+fetch(`${BACKEND_URL}/v1/notes`, {
+  method: "POST",
+  credentials: "include", // send cookien med
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ title, body }),
+});
+```
+
+```js
+// server.js, i send(): ikke "*", når der er cookies med
+"Access-Control-Allow-Origin": "http://localhost:8080",
+"Access-Control-Allow-Credentials": "true",
+```
+
+**Hvor hører det hjemme i lagene?** Login-routen og tjekket af cookien ligger i **presentation** (`server.js`). Reglen "kun ejeren må slette sin note" er en regel for applikationen og hører til i **application** (`notesService.js`). Brugerne med deres password-hash ligger i **persistence**, fx en `usersRepository.js` mod MongoDB.
+
+**Trade-offs:**
+
+- `sessions` ligger i hukommelsen, så alle bliver logget ud, når backend genstarter, og det virker ikke med flere backend-containere. Rigtige systemer gemmer sessionerne i en database eller i Redis.
+- Det her er stadig jeres egen login. Med **"Log ind med GitHub"** (OAuth, Del 5) skal I slet ikke gemme passwords. Til gengæld skal I oprette en OAuth-app på GitHub og holde dens `client_secret` i backends `.env`.
+
+</details>
+
 ---
 
 ## Del 4: Lækket!
@@ -219,6 +307,65 @@ Tilbagekald derefter det gamle token, og lav et nyt.
 - **Kortlivede tokens:** Jo kortere et token virker, jo mindre skade gør det, hvis det lækker. Det er derfor, GitHub beder jer om en udløbsdato.
 - **"Log ind med GitHub/Google"** (OAuth): Brugeren giver en app et token *på sine vegne*, med bestemte scopes, uden at give appen sit password. Det er svaret på 3c.
 - **HTTPS:** Et token, der sendes over `http://`, kan læses af alle på netværket. Et bearer-token beskytter kun, hvis forbindelsen er krypteret.
+
+---
+
+## Del 6: Øvelse · Tjek jeres obligatoriske opgave
+
+Nu skal I bruge det på noget, der allerede er afleveret. Åbn jeres gruppes repo med den obligatoriske opgave, som I afleverede i sidste uge, og find alle de *secrets*, der står som almindelig tekst.
+
+### 6a · Find dem
+
+Klon repoet på ny, så I tjekker præcis det, der ligger på GitHub, og ikke jeres lokale kopi:
+
+```bash
+git clone <url-til-jeres-repo> tjek-aflevering
+cd tjek-aflevering
+```
+
+**I filerne, som de ser ud nu:**
+
+```bash
+git grep -n -i -E "password|passwd|secret|token|api[_-]?key|bearer"
+git grep -n -E "ghp_|github_pat_"            # GitHub-tokens
+git grep -n -E "://[^/@ ]+:[^/@ ]+@"         # URL med brugernavn og password
+ls -a                                         # ligger der en .env?
+cat .gitignore                                # står .env der?
+```
+
+**I historikken.** En *secret*, der er slettet i en senere commit, ligger der stadig (Del 4):
+
+```bash
+git log -p --all | grep -n -i -E "password|token|api[_-]?key|bearer|ghp_"
+git log --all --oneline -- .env               # har .env nogensinde været committet?
+```
+
+Kig især i `docker-compose.yml` (`environment:`), `Dockerfile` (`ENV` og `ARG`), jeres shell-scripts (`curl -H "Authorization: …"`) og `README.md` (eksempler med rigtige værdier).
+
+Slå også **Secret Protection** til på repoet, som i Del 4, og se, om GitHub finder noget, I har overset.
+
+Skriv en liste: *Hvad* er det, *hvor* ligger det (fil og commit), og er det **rigtigt** (virker det et sted), eller er det bare et eksempel?
+
+### 6b · Løs dem
+
+For hver *secret* på listen, i den rækkefølge I fandt frem til i Del 4:
+
+1. **Er den rigtig, så tilbagekald den først**, og lav en ny. Et token på GitHub i flere uger skal regnes for lækket.
+2. **Flyt den ud af koden** til en `.env`-fil, som i Del 3a. Scriptet læser den som miljøvariabel, fx `curl -H "Authorization: Bearer $API_TOKEN" …`, og `docker-compose.yml` sender den videre med `${API_TOKEN}`.
+3. **Tilføj `.env` til `.gitignore`**, og commit en `.env.example` med navnene, men uden værdier.
+4. **Opdatér `README.md`**, så en fremmed kan se, hvilke værdier de selv skal udfylde, før `docker compose up` virker.
+5. **Commit og push**, og kør tjekket fra 6a igen.
+
+**Færdig betyder:** `git grep` finder ingen rigtige *secrets*, `.env` er ikke i repoet, og projektet kan stadig startes ud fra README'en.
+
+> **Miniøvelse:** Fandt I ingen *secrets*? Så kig efter det, der *kunne* blive et problem: et password, der står hardcodet "bare til test", en `ENV` i `Dockerfile`, eller en URL med brugernavn og password i. Hvad ville der ske, hvis I en dag skiftede den ud med en rigtig værdi?
+
+Spørgsmål til bagefter:
+
+- Hvor mange af de *secrets*, I fandt, var stadig gyldige?
+- Hvilken af dem kunne I ikke fjerne ved bare at lave en ny commit? Hvad gjorde I i stedet?
+
+---
 
 Tilbage til dagens spørgsmål: **Hvem kan slette alle jeres noter nu?**
 
